@@ -52,7 +52,7 @@ void set_shaders()
 	char c;
 	int count;
 
-	fp=fopen("shader/shader.vs", "r");
+	fp=fopen("Shader/shader.vs", "r");
 	count=0;
 	while((c=fgetc(fp)) != EOF)
 	{
@@ -61,7 +61,7 @@ void set_shaders()
 	}
 	fclose(fp);
 
-	fp=fopen("shader/shader.fs", "r");
+	fp=fopen("Shader/shader.fs", "r");
 	count=0;
 	while((c=fgetc(fp)) != EOF)
 	{

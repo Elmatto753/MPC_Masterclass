@@ -23,25 +23,37 @@
 
 Timer::Timer()
 {
-	frames=0;
-	update_time=1000;
-	last_time=0;
-	FPS=0;
+  frames=0;
+  update_time=1000;
+  last_time=0;
+  FPS=0;
 }
 
 void Timer::update()
 {
-	frames++;
+  frames++;
 
-	if(GetTickCount()-last_time > update_time) 
-	{
-		FPS=((double)frames/(double)(GetTickCount()-last_time))*1000.0; 
-		last_time=GetTickCount();
-		frames=0;
-	}
+  if(GetTickCount()-last_time > update_time)
+  {
+    FPS=((double)frames/(double)(GetTickCount()-last_time))*1000.0;
+    last_time=GetTickCount();
+    frames=0;
+  }
 }
 
 double Timer::get_fps()
 {
-	return FPS;
+  return FPS;
+}
+
+// rewriting Windows function with a POSIX clock
+double Timer::GetTickCount(void)
+{
+  struct timespec now;
+  if (clock_gettime(CLOCK_MONOTONIC, &now))
+  {
+      return 0;
+  }
+
+  return now.tv_sec * 1000.0 + now.tv_nsec / 1000000.0;
 }

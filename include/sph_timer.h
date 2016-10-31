@@ -23,6 +23,7 @@
 #define __SPHTIMER_H__
 
 //#include <windows.h>
+#include <time.h>
 
 class Timer
 {
@@ -36,6 +37,7 @@ public:
 	Timer();
 	void update();
 	double get_fps();
+	double GetTickCount(void);
 };
 
 #endif
