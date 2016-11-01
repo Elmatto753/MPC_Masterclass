@@ -39,7 +39,7 @@ SPHSystem::SPHSystem()
 	grid_size.z=(uint)ceil(world_size.z/cell_size);
 	tot_cell=grid_size.x*grid_size.y*grid_size.z;
 
-	gravity.x=0.0f; 
+	gravity.x=0.0f;
 	gravity.y=-6.8f;
 	gravity.z=0.0f;
 	wall_damping=-0.5f;
@@ -427,3 +427,48 @@ uint SPHSystem::calc_cell_hash(int3 cell_pos)
 
 	return ((uint)(cell_pos.z))*grid_size.y*grid_size.x + ((uint)(cell_pos.y))*grid_size.x + (uint)(cell_pos.x);
 }
+
+float SPHSystem::length(float3 vector)
+{
+  float X = vector.x;
+  float Y = vector.y;
+  float Z = vector.z;
+  return sqrt( X * X + Y * Y + Z * Z );
+}
+
+float3 SPHSystem::normalize(float3 vector)
+{
+  float3 normal;
+  float vecLength = length(vector);
+
+  if(vecLength != 0)
+  {
+    normal.x = vector.x / vecLength;
+    normal.y = vector.y / vecLength;
+    normal.z = vector.z / vecLength;
+  }
+
+  return normal;
+
+}
+
+void SPHSystem::driftVelocity(Particle p)
+{
+
+  if ( p.prevVel.x != NULL )
+  {
+    float3 directionVelocity;
+    directionVelocity.x = (p.vel.x * normalize(p.vel).x);
+    directionVelocity.y = (p.vel.y * normalize(p.vel).y);
+    directionVelocity.z = (p.vel.z * normalize(p.vel).z);
+
+    acceleration.x = gravity.x - directionVelocity.x - ( p.vel.x - p.prevVel.x / time_step );
+    acceleration.y = gravity.y - directionVelocity.y - ( p.vel.y - p.prevVel.y / time_step );
+    acceleration.z = gravity.z - directionVelocity.z - ( p.vel.z - p.prevVel.z / time_step );
+  }
+
+  drift_velocity = 1 * (rest_density - mass * rest_density) * acceleration;
+  p.prevVel = p.vel;
+}
+
+

@@ -23,6 +23,7 @@
 #define __SPHSYSTEM_H__
 
 #include "sph_type.h"
+#include <math.h>
 
 class Particle
 {
@@ -30,6 +31,7 @@ public:
 	uint id;
 	float3 pos;
 	float3 vel;
+	float3 prevVel;
 	float3 acc;
 	float3 ev;
 
@@ -75,6 +77,9 @@ public:
 	float self_dens;
 	float self_lplc_color;
 
+	float drift_velocity;
+	float3 acceleration;
+
 	Particle *mem;
 	Particle **cell;
 
@@ -92,6 +97,9 @@ private:
 	void comp_dens_pres();
 	void comp_force_adv();
 	void advection();
+	float length(float3 vector);
+	float3 normalize(float3 vector);
+	void driftVelocity(Particle p);
 
 private:
 	int3 calc_cell_pos(float3 p);
