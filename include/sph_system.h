@@ -31,7 +31,7 @@ public:
 	uint id;
 	float3 pos;
 	float3 vel;
-	float3 prevVel;
+
 	float3 acc;
 	float3 ev;
 
@@ -77,7 +77,8 @@ public:
 	float self_dens;
 	float self_lplc_color;
 
-	float drift_velocity;
+	float3 prevVel;
+	float3 drift_velocity;
 	float3 acceleration;
 
 	Particle *mem;
@@ -99,7 +100,7 @@ private:
 	void advection();
 	float length(float3 vector);
 	float3 normalize(float3 vector);
-	void driftVelocity(Particle p);
+	void driftVelocity();
 
 private:
 	int3 calc_cell_pos(float3 p);

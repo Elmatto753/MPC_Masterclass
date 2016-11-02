@@ -31,6 +31,8 @@
 
 SPHSystem *sph;
 
+SPHSystem *sph2;
+
 Timer *sph_timer;
 char *window_title;
 
@@ -116,7 +118,7 @@ void set_shaders()
 void draw_box(float ox, float oy, float oz, float width, float height, float length)
 {
     glLineWidth(1.0f);
-	glColor3f(1.0f, 0.0f, 0.0f);
+        glColor3f(1.0f, 0.0f, 0.0f);
 
     glBegin(GL_LINES);   
 		
@@ -171,6 +173,9 @@ void init_sph_system()
 
 	sph=new SPHSystem();
 	sph->init_system();
+	sph2=new SPHSystem();
+	sph2->init_system();
+	sph2->mass = 0.05f;
 
 	sph_timer=new Timer();
 	window_title=(char *)malloc(sizeof(char)*50);
@@ -211,6 +216,16 @@ void render_particles()
 						sph->mem[i].pos.z*sim_ratio.z+real_world_origin.z);
 		glEnd();
 	}
+
+	glColor3f(0.5f, 0.1f, 0.1f);
+	for(uint i=0; i<sph2->num_particle; i++)
+	{
+		glBegin(GL_POINTS);
+			glVertex3f(sph2->mem[i].pos.x*sim_ratio.x+real_world_origin.x,
+						sph2->mem[i].pos.y*sim_ratio.y+real_world_origin.y,
+						sph2->mem[i].pos.z*sim_ratio.z+real_world_origin.z);
+		glEnd();
+	}
 }
 
 void display_func()
@@ -233,6 +248,7 @@ void display_func()
     glRotatef(yRot, 0.0f, 1.0f, 0.0f);
 
 	sph->animation();
+	sph2->animation();
 
 	glUseProgram(p);
 	render_particles();
@@ -276,6 +292,7 @@ void keyboard_func(unsigned char key, int x, int y)
 	if(key == ' ')
 	{
 		sph->sys_running=1-sph->sys_running;
+		sph2->sys_running=1-sph2->sys_running;
 	}
 
 	if(key == 'w')

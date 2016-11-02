@@ -452,23 +452,29 @@ float3 SPHSystem::normalize(float3 vector)
 
 }
 
-void SPHSystem::driftVelocity(Particle p)
+void SPHSystem::driftVelocity()
 {
+  Particle *p;
 
-  if ( p.prevVel.x != NULL )
+  for(uint i=0; i<num_particle; i++)
   {
-    float3 directionVelocity;
-    directionVelocity.x = (p.vel.x * normalize(p.vel).x);
-    directionVelocity.y = (p.vel.y * normalize(p.vel).y);
-    directionVelocity.z = (p.vel.z * normalize(p.vel).z);
+    if ( prevVel.x != NULL )
+    {
+      float3 directionVelocity;
+      directionVelocity.x = (p->vel.x * normalize(p->vel).x);
+      directionVelocity.y = (p->vel.y * normalize(p->vel).y);
+      directionVelocity.z = (p->vel.z * normalize(p->vel).z);
 
-    acceleration.x = gravity.x - directionVelocity.x - ( p.vel.x - p.prevVel.x / time_step );
-    acceleration.y = gravity.y - directionVelocity.y - ( p.vel.y - p.prevVel.y / time_step );
-    acceleration.z = gravity.z - directionVelocity.z - ( p.vel.z - p.prevVel.z / time_step );
+      acceleration.x = gravity.x - directionVelocity.x - ( p->vel.x - prevVel.x / time_step );
+      acceleration.y = gravity.y - directionVelocity.y - ( p->vel.y - prevVel.y / time_step );
+      acceleration.z = gravity.z - directionVelocity.z - ( p->vel.z - prevVel.z / time_step );
+
+
+    }
   }
 
-  drift_velocity = 1 * (rest_density - mass * rest_density) * acceleration;
-  p.prevVel = p.vel;
+ // drift_velocity = 1 * (rest_density - mass * rest_density) * acceleration - 1 * (normalize(p->pres) );
+  prevVel = drift_velocity;
 }
 
 
