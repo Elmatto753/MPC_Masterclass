@@ -325,6 +325,11 @@ void keyboard_func(unsigned char key, int x, int y)
 		yTrans += 0.3f;
 	}
 
+	if(key == 27)
+	{
+	  exit(0);
+	}
+
 	glutPostRedisplay();
 }
 

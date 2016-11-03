@@ -6,13 +6,13 @@
 #include "sph_particle.h"
 
 
-class phase
+class Phase
 {
 public:
 
-  phase(){}
+  Phase(){}
 
-  ~phase(){}
+  ~Phase(){}
 
   float volumeFraction;
   float massFraction;
@@ -24,9 +24,9 @@ public:
   vec3 phaseColour;
   float phaseViscosity;
 
-  std::vector<Particle> *particleList;
+  std::vector<Particle> particleList;
 
-  void addParticle(Particle *p) { particleList->push_back(*p); }
+  void addParticle(Particle *p) { particleList.push_back(*p); }
 
 };
 

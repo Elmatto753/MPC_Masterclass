@@ -13,9 +13,10 @@ public:
 	vec3 acc;
 	vec3 ev;
 
-	float dens;
-	float pres;
-	float mass;
+	float restDensity;
+	float pressure;
+	float restMass;
+	float viscosity;
 
 	float surf_norm;
 

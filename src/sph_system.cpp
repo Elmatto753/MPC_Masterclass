@@ -21,6 +21,7 @@
 
 #include "sph_system.h"
 #include "sph_header.h"
+#include <iostream>
 
 SPHSystem::SPHSystem()
 {
@@ -64,6 +65,13 @@ SPHSystem::SPHSystem()
 	mem=(Particle *)malloc(sizeof(Particle)*max_particle);
 	cell=(Particle **)malloc(sizeof(Particle *)*tot_cell);
 
+	phase1 = new Phase;
+	phaseList.push_back(*phase1);
+	num_phases++;
+	phase2 = new Phase;
+	phaseList.push_back(*phase2);
+	num_phases++;
+
 	sys_running=0;
 
 	printf("Initialize SPH:\n");
@@ -94,10 +102,13 @@ void SPHSystem::animation()
 		return;
 	}
 
-	build_table();
-	comp_dens_pres();
-	comp_force_adv();
-	advection();
+	for( uint i = 0; i<num_phases; i++ )
+	{
+	  build_table(phaseList[i]);
+	  comp_dens_pres(phaseList[i]);
+	  comp_force_adv(phaseList[i]);
+	  advection(phaseList[i]);
+	}
 }
 
 void SPHSystem::init_system()
@@ -111,11 +122,24 @@ void SPHSystem::init_system()
 
 	for(pos.m_x=world_size.m_x*0.0f; pos.m_x<world_size.m_x*0.5f; pos.m_x+=(kernel*0.5f))
 	{
-		for(pos.m_y=world_size.m_y*0.0f; pos.m_y<world_size.m_y*0.8f; pos.m_y+=(kernel*0.5f))
+		for(pos.m_y=world_size.m_y*0.0f; pos.m_y<world_size.m_y*0.5f; pos.m_y+=(kernel*0.5f))
 		{
 			for(pos.m_z=world_size.m_z*0.0f; pos.m_z<world_size.m_z*0.5f; pos.m_z+=(kernel*0.5f))
 			{
-				add_particle(pos, vel);
+				add_particle(*phase1, pos, vel);
+
+			}
+		}
+	}
+
+	for(pos.m_x=world_size.m_x*0.0f; pos.m_x<world_size.m_x*0.4f; pos.m_x+=(kernel*0.5f))
+	{
+		for(pos.m_y=world_size.m_y*0.0f; pos.m_y<world_size.m_y*0.5f; pos.m_y+=(kernel*0.5f))
+		{
+			for(pos.m_z=world_size.m_z*0.0f; pos.m_z<world_size.m_z*0.5f; pos.m_z+=(kernel*0.5f))
+			{
+
+				add_particle(*phase2, pos, vel);
 			}
 		}
 	}
@@ -123,7 +147,7 @@ void SPHSystem::init_system()
 	printf("Init Particle: %u\n", num_particle);
 }
 
-void SPHSystem::add_particle(vec3 pos, vec3 vel)
+void SPHSystem::add_particle(Phase phase, vec3 pos, vec3 vel)
 {
 	Particle *p=&(mem[num_particle]);
 
@@ -139,16 +163,17 @@ void SPHSystem::add_particle(vec3 pos, vec3 vel)
 	p->ev.m_y=0.0f;
 	p->ev.m_z=0.0f;
 
-	p->dens=rest_density;
-	p->pres=0.0f;
-	p->mass=0.01f;
+	p->restDensity=rest_density;
+	p->pressure=0.0f;
+	p->restMass=0.01f;
 
 	p->next=NULL;
+	phase.addParticle(p);
 
 	num_particle++;
 }
 
-void SPHSystem::build_table()
+void SPHSystem::build_table(Phase phase)
 {
 	Particle *p;
 	uint hash;
@@ -160,7 +185,7 @@ void SPHSystem::build_table()
 
 	for(uint i=0; i<num_particle; i++)
 	{
-		p=&(mem[i]);
+		p=&(phase.particleList[i]);
 		hash=calc_cell_hash(calc_cell_pos(p->pos));
 
 		if(cell[hash] == NULL)
@@ -176,7 +201,7 @@ void SPHSystem::build_table()
 	}
 }
 
-void SPHSystem::comp_dens_pres()
+void SPHSystem::comp_dens_pres(Phase phase)
 {
 	Particle *p;
 	Particle *np;
@@ -190,11 +215,11 @@ void SPHSystem::comp_dens_pres()
 
 	for(uint i=0; i<num_particle; i++)
 	{
-		p=&(mem[i]); 
+		p=&(phase.particleList[i]);
 		cell_pos=calc_cell_pos(p->pos);
 
-		p->dens=0.0f;
-		p->pres=0.0f;
+		p->restDensity=0.0f;
+		p->pressure=0.0f;
 
 		for(int x=-1; x<=1; x++)
 		{
@@ -226,7 +251,7 @@ void SPHSystem::comp_dens_pres()
 							continue;
 						}
 
-						p->dens=p->dens + p->mass * poly6_value * pow(kernel_2-r2, 3);
+						p->restDensity=p->restDensity + p->restMass * poly6_value * pow(kernel_2-r2, 3);
 
 						np=np->next;
 					}
@@ -234,12 +259,12 @@ void SPHSystem::comp_dens_pres()
 			}
 		}
 
-		p->dens=p->dens+self_dens;
-		p->pres=(pow(p->dens / rest_density, 7) - 1) *gas_constant;
+		p->restDensity=p->restDensity+self_dens;
+		p->pressure=(pow(p->restDensity / rest_density, 7) - 1) *gas_constant;
 	}
 }
 
-void SPHSystem::comp_force_adv()
+void SPHSystem::comp_force_adv(Phase phase)
 {
 	Particle *p;
 	Particle *np;
@@ -265,7 +290,7 @@ void SPHSystem::comp_force_adv()
 
 	for(uint i=0; i<num_particle; i++)
 	{
-		p=&(mem[i]); 
+		p=&(phase.particleList[i]);
 		cell_pos=calc_cell_pos(p->pos);
 
 		p->acc.m_x=0.0f;
@@ -304,11 +329,11 @@ void SPHSystem::comp_force_adv()
 						if(r2 < kernel_2 && r2 > INF)
 						{
 							r=sqrt(r2);
-							V=mass/np->dens/2;
+							V=mass/np->restDensity/2;
 							kernel_r=kernel-r;
 
 							pres_kernel=spiky_value * kernel_r * kernel_r;
-							temp_force=V * (p->pres+np->pres) * pres_kernel;
+							temp_force=V * (p->pressure+np->pressure) * pres_kernel;
 							p->acc.m_x=p->acc.m_x-rel_pos.m_x*temp_force/r;
 							p->acc.m_y=p->acc.m_y-rel_pos.m_y*temp_force/r;
 							p->acc.m_z=p->acc.m_z-rel_pos.m_z*temp_force/r;
@@ -336,7 +361,7 @@ void SPHSystem::comp_force_adv()
 			}
 		}
 
-		lplc_color+=self_lplc_color/p->dens;
+		lplc_color+=self_lplc_color/p->restDensity;
 		p->surf_norm=sqrt(grad_color.m_x*grad_color.m_x+grad_color.m_y*grad_color.m_y+grad_color.m_z*grad_color.m_z);
 
 		if(p->surf_norm > surf_norm)
@@ -348,16 +373,16 @@ void SPHSystem::comp_force_adv()
 	}
 }
 
-void SPHSystem::advection()
+void SPHSystem::advection(Phase phase)
 {
 	Particle *p;
 	for(uint i=0; i<num_particle; i++)
 	{
-		p=&(mem[i]);
+		p=&(phase.particleList[i]);
 
-		p->vel.m_x=p->vel.m_x+p->acc.m_x*time_step/p->dens+gravity.m_x*time_step;
-		p->vel.m_y=p->vel.m_y+p->acc.m_y*time_step/p->dens+gravity.m_y*time_step;
-		p->vel.m_z=p->vel.m_z+p->acc.m_z*time_step/p->dens+gravity.m_z*time_step;
+		p->vel.m_x=p->vel.m_x+p->acc.m_x*time_step/p->restDensity+gravity.m_x*time_step;
+		p->vel.m_y=p->vel.m_y+p->acc.m_y*time_step/p->restDensity+gravity.m_y*time_step;
+		p->vel.m_z=p->vel.m_z+p->acc.m_z*time_step/p->restDensity+gravity.m_z*time_step;
 
 		p->pos.m_x=p->pos.m_x+p->vel.m_x*time_step;
 		p->pos.m_y=p->pos.m_y+p->vel.m_y*time_step;
