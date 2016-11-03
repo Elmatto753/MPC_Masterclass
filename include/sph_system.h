@@ -23,25 +23,11 @@
 #define __SPHSYSTEM_H__
 
 #include "sph_type.h"
+#include "sph_phase.h"
+#include "sph_particle.h"
 #include <math.h>
 
-class Particle
-{
-public:
-	uint id;
-	float3 pos;
-	float3 vel;
 
-	float3 acc;
-	float3 ev;
-
-	float dens;
-	float pres;
-
-	float surf_norm;
-
-	Particle *next;
-};
 
 class SPHSystem
 {
@@ -52,12 +38,12 @@ public:
 	float kernel;
 	float mass;
 
-	float3 world_size;
+	vec3 world_size;
 	float cell_size;
 	uint3 grid_size;
 	uint tot_cell;
 
-	float3 gravity;
+	vec3 gravity;
 	float wall_damping;
 	float rest_density;
 	float gas_constant;
@@ -77,9 +63,9 @@ public:
 	float self_dens;
 	float self_lplc_color;
 
-	float3 prevVel;
-	float3 drift_velocity;
-	float3 acceleration;
+	vec3 prevVel;
+	vec3 drift_velocity;
+	vec3 acceleration;
 
 	Particle *mem;
 	Particle **cell;
@@ -91,19 +77,19 @@ public:
 	~SPHSystem();
 	void animation();
 	void init_system();
-	void add_particle(float3 pos, float3 vel);
+	void add_particle(vec3 pos, vec3 vel);
 
 private:
 	void build_table();
 	void comp_dens_pres();
 	void comp_force_adv();
 	void advection();
-	float length(float3 vector);
-	float3 normalize(float3 vector);
+	float length(vec3 vector);
+	vec3 normalize(vec3 vector);
 	void driftVelocity();
 
 private:
-	int3 calc_cell_pos(float3 p);
+	int3 calc_cell_pos(vec3 p);
 	uint calc_cell_hash(int3 cell_pos);
 };
 

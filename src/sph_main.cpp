@@ -163,13 +163,13 @@ void draw_box(float ox, float oy, float oz, float width, float height, float len
 
 void init_sph_system()
 {
-	real_world_origin.x=-10.0f;
-	real_world_origin.y=-10.0f;
-	real_world_origin.z=-10.0f;
+	real_world_origin.m_x=-10.0f;
+	real_world_origin.m_y=-10.0f;
+	real_world_origin.m_z=-10.0f;
 
-	real_world_side.x=20.0f;
-	real_world_side.y=20.0f;
-	real_world_side.z=20.0f;
+	real_world_side.m_x=20.0f;
+	real_world_side.m_y=20.0f;
+	real_world_side.m_z=20.0f;
 
 	sph=new SPHSystem();
 	sph->init_system();
@@ -198,9 +198,9 @@ void init()
 
 void init_ratio()
 {
-	sim_ratio.x=real_world_side.x/sph->world_size.x;
-	sim_ratio.y=real_world_side.y/sph->world_size.y;
-	sim_ratio.z=real_world_side.z/sph->world_size.z;
+	sim_ratio.m_x=real_world_side.m_x/sph->world_size.m_x;
+	sim_ratio.m_y=real_world_side.m_y/sph->world_size.m_y;
+	sim_ratio.m_z=real_world_side.m_z/sph->world_size.m_z;
 }
 
 void render_particles()
@@ -211,9 +211,9 @@ void render_particles()
 	for(uint i=0; i<sph->num_particle; i++)
 	{
 		glBegin(GL_POINTS);
-			glVertex3f(sph->mem[i].pos.x*sim_ratio.x+real_world_origin.x, 
-						sph->mem[i].pos.y*sim_ratio.y+real_world_origin.y,
-						sph->mem[i].pos.z*sim_ratio.z+real_world_origin.z);
+			glVertex3f(sph->mem[i].pos.m_x*sim_ratio.m_x+real_world_origin.m_x,
+						sph->mem[i].pos.m_y*sim_ratio.m_y+real_world_origin.m_y,
+						sph->mem[i].pos.m_z*sim_ratio.m_z+real_world_origin.m_z);
 		glEnd();
 	}
 
@@ -221,9 +221,9 @@ void render_particles()
 	for(uint i=0; i<sph2->num_particle; i++)
 	{
 		glBegin(GL_POINTS);
-			glVertex3f(sph2->mem[i].pos.x*sim_ratio.x+real_world_origin.x,
-						sph2->mem[i].pos.y*sim_ratio.y+real_world_origin.y,
-						sph2->mem[i].pos.z*sim_ratio.z+real_world_origin.z);
+			glVertex3f(sph2->mem[i].pos.m_x*sim_ratio.m_x+real_world_origin.m_x,
+						sph2->mem[i].pos.m_y*sim_ratio.m_y+real_world_origin.m_y,
+						sph2->mem[i].pos.m_z*sim_ratio.m_z+real_world_origin.m_z);
 		glEnd();
 	}
 }
@@ -254,7 +254,7 @@ void display_func()
 	render_particles();
 
 	glUseProgram(0);
-	draw_box(real_world_origin.x, real_world_origin.y, real_world_origin.z, real_world_side.x, real_world_side.y, real_world_side.z);
+	draw_box(real_world_origin.m_x, real_world_origin.m_y, real_world_origin.m_z, real_world_side.m_x, real_world_side.m_y, real_world_side.m_z);
 
 	glPopMatrix();
 

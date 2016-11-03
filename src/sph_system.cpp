@@ -30,18 +30,18 @@ SPHSystem::SPHSystem()
 	kernel=0.04f;
 	mass=0.02f;
 
-	world_size.x=0.64f;
-	world_size.y=0.64f;
-	world_size.z=0.64f;
+	world_size.m_x=0.64f;
+	world_size.m_y=0.64f;
+	world_size.m_z=0.64f;
 	cell_size=kernel;
-	grid_size.x=(uint)ceil(world_size.x/cell_size);
-	grid_size.y=(uint)ceil(world_size.y/cell_size);
-	grid_size.z=(uint)ceil(world_size.z/cell_size);
-	tot_cell=grid_size.x*grid_size.y*grid_size.z;
+	grid_size.m_x=(uint)ceil(world_size.m_x/cell_size);
+	grid_size.m_y=(uint)ceil(world_size.m_y/cell_size);
+	grid_size.m_z=(uint)ceil(world_size.m_z/cell_size);
+	tot_cell=grid_size.m_x*grid_size.m_y*grid_size.m_z;
 
-	gravity.x=0.0f;
-	gravity.y=-6.8f;
-	gravity.z=0.0f;
+	gravity.m_x=0.0f;
+	gravity.m_y=-6.8f;
+	gravity.m_z=0.0f;
 	wall_damping=-0.5f;
 	rest_density=1000.0f;
 	gas_constant=1.0f;
@@ -67,13 +67,13 @@ SPHSystem::SPHSystem()
 	sys_running=0;
 
 	printf("Initialize SPH:\n");
-	printf("World Width : %f\n", world_size.x);
-	printf("World Height: %f\n", world_size.y);
-	printf("World Length: %f\n", world_size.z);
+	printf("World Width : %f\n", world_size.m_x);
+	printf("World Height: %f\n", world_size.m_y);
+	printf("World Length: %f\n", world_size.m_z);
 	printf("Cell Size  : %f\n", cell_size);
-	printf("Grid Width : %u\n", grid_size.x);
-	printf("Grid Height: %u\n", grid_size.y);
-	printf("Grid Length: %u\n", grid_size.z);
+	printf("Grid Width : %u\n", grid_size.m_x);
+	printf("Grid Height: %u\n", grid_size.m_y);
+	printf("Grid Length: %u\n", grid_size.m_z);
 	printf("Total Cell : %u\n", tot_cell);
 	printf("Poly6 Kernel: %f\n", poly6_value);
 	printf("Spiky Kernel: %f\n", spiky_value);
@@ -102,18 +102,18 @@ void SPHSystem::animation()
 
 void SPHSystem::init_system()
 {
-	float3 pos;
-	float3 vel;
+	vec3 pos;
+	vec3 vel;
 
-	vel.x=0.0f;
-	vel.y=0.0f;
-	vel.z=0.0f;
+	vel.m_x=0.0f;
+	vel.m_y=0.0f;
+	vel.m_z=0.0f;
 
-	for(pos.x=world_size.x*0.0f; pos.x<world_size.x*0.6f; pos.x+=(kernel*0.5f))
+	for(pos.m_x=world_size.m_x*0.0f; pos.m_x<world_size.m_x*0.5f; pos.m_x+=(kernel*0.5f))
 	{
-		for(pos.y=world_size.y*0.0f; pos.y<world_size.y*0.9f; pos.y+=(kernel*0.5f))
+		for(pos.m_y=world_size.m_y*0.0f; pos.m_y<world_size.m_y*0.8f; pos.m_y+=(kernel*0.5f))
 		{
-			for(pos.z=world_size.z*0.0f; pos.z<world_size.z*0.6f; pos.z+=(kernel*0.5f))
+			for(pos.m_z=world_size.m_z*0.0f; pos.m_z<world_size.m_z*0.5f; pos.m_z+=(kernel*0.5f))
 			{
 				add_particle(pos, vel);
 			}
@@ -123,7 +123,7 @@ void SPHSystem::init_system()
 	printf("Init Particle: %u\n", num_particle);
 }
 
-void SPHSystem::add_particle(float3 pos, float3 vel)
+void SPHSystem::add_particle(vec3 pos, vec3 vel)
 {
 	Particle *p=&(mem[num_particle]);
 
@@ -132,15 +132,16 @@ void SPHSystem::add_particle(float3 pos, float3 vel)
 	p->pos=pos;
 	p->vel=vel;
 
-	p->acc.x=0.0f;
-	p->acc.y=0.0f;
-	p->acc.z=0.0f;
-	p->ev.x=0.0f;
-	p->ev.y=0.0f;
-	p->ev.z=0.0f;
+	p->acc.m_x=0.0f;
+	p->acc.m_y=0.0f;
+	p->acc.m_z=0.0f;
+	p->ev.m_x=0.0f;
+	p->ev.m_y=0.0f;
+	p->ev.m_z=0.0f;
 
 	p->dens=rest_density;
 	p->pres=0.0f;
+	p->mass=0.01f;
 
 	p->next=NULL;
 
@@ -184,7 +185,7 @@ void SPHSystem::comp_dens_pres()
 	int3 near_pos;
 	uint hash;
 
-	float3 rel_pos;
+	vec3 rel_pos;
 	float r2;
 
 	for(uint i=0; i<num_particle; i++)
@@ -201,9 +202,9 @@ void SPHSystem::comp_dens_pres()
 			{
 				for(int z=-1; z<=1; z++)
 				{
-					near_pos.x=cell_pos.x+x;
-					near_pos.y=cell_pos.y+y;
-					near_pos.z=cell_pos.z+z;
+					near_pos.m_x=cell_pos.m_x+x;
+					near_pos.m_y=cell_pos.m_y+y;
+					near_pos.m_z=cell_pos.m_z+z;
 					hash=calc_cell_hash(near_pos);
 
 					if(hash == 0xffffffff)
@@ -214,10 +215,10 @@ void SPHSystem::comp_dens_pres()
 					np=cell[hash];
 					while(np != NULL)
 					{
-						rel_pos.x=np->pos.x-p->pos.x;
-						rel_pos.y=np->pos.y-p->pos.y;
-						rel_pos.z=np->pos.z-p->pos.z;
-						r2=rel_pos.x*rel_pos.x+rel_pos.y*rel_pos.y+rel_pos.z*rel_pos.z;
+						rel_pos.m_x=np->pos.m_x-p->pos.m_x;
+						rel_pos.m_y=np->pos.m_y-p->pos.m_y;
+						rel_pos.m_z=np->pos.m_z-p->pos.m_z;
+						r2=rel_pos.m_x*rel_pos.m_x+rel_pos.m_y*rel_pos.m_y+rel_pos.m_z*rel_pos.m_z;
 
 						if(r2<INF || r2>=kernel_2)
 						{
@@ -225,7 +226,7 @@ void SPHSystem::comp_dens_pres()
 							continue;
 						}
 
-						p->dens=p->dens + mass * poly6_value * pow(kernel_2-r2, 3);
+						p->dens=p->dens + p->mass * poly6_value * pow(kernel_2-r2, 3);
 
 						np=np->next;
 					}
@@ -247,8 +248,8 @@ void SPHSystem::comp_force_adv()
 	int3 near_pos;
 	uint hash;
 
-	float3 rel_pos;
-	float3 rel_vel;
+	vec3 rel_pos;
+	vec3 rel_vel;
 
 	float r2;
 	float r;
@@ -259,7 +260,7 @@ void SPHSystem::comp_force_adv()
 	float visc_kernel;
 	float temp_force;
 
-	float3 grad_color;
+	vec3 grad_color;
 	float lplc_color;
 
 	for(uint i=0; i<num_particle; i++)
@@ -267,13 +268,13 @@ void SPHSystem::comp_force_adv()
 		p=&(mem[i]); 
 		cell_pos=calc_cell_pos(p->pos);
 
-		p->acc.x=0.0f;
-		p->acc.y=0.0f;
-		p->acc.z=0.0f;
+		p->acc.m_x=0.0f;
+		p->acc.m_y=0.0f;
+		p->acc.m_z=0.0f;
 
-		grad_color.x=0.0f;
-		grad_color.y=0.0f;
-		grad_color.z=0.0f;
+		grad_color.m_x=0.0f;
+		grad_color.m_y=0.0f;
+		grad_color.m_z=0.0f;
 		lplc_color=0.0f;
 		
 		for(int x=-1; x<=1; x++)
@@ -282,9 +283,9 @@ void SPHSystem::comp_force_adv()
 			{
 				for(int z=-1; z<=1; z++)
 				{
-					near_pos.x=cell_pos.x+x;
-					near_pos.y=cell_pos.y+y;
-					near_pos.z=cell_pos.z+z;
+					near_pos.m_x=cell_pos.m_x+x;
+					near_pos.m_y=cell_pos.m_y+y;
+					near_pos.m_z=cell_pos.m_z+z;
 					hash=calc_cell_hash(near_pos);
 
 					if(hash == 0xffffffff)
@@ -295,10 +296,10 @@ void SPHSystem::comp_force_adv()
 					np=cell[hash];
 					while(np != NULL)
 					{
-						rel_pos.x=p->pos.x-np->pos.x;
-						rel_pos.y=p->pos.y-np->pos.y;
-						rel_pos.z=p->pos.z-np->pos.z;
-						r2=rel_pos.x*rel_pos.x+rel_pos.y*rel_pos.y+rel_pos.z*rel_pos.z;
+						rel_pos.m_x=p->pos.m_x-np->pos.m_x;
+						rel_pos.m_y=p->pos.m_y-np->pos.m_y;
+						rel_pos.m_z=p->pos.m_z-np->pos.m_z;
+						r2=rel_pos.m_x*rel_pos.m_x+rel_pos.m_y*rel_pos.m_y+rel_pos.m_z*rel_pos.m_z;
 
 						if(r2 < kernel_2 && r2 > INF)
 						{
@@ -308,24 +309,24 @@ void SPHSystem::comp_force_adv()
 
 							pres_kernel=spiky_value * kernel_r * kernel_r;
 							temp_force=V * (p->pres+np->pres) * pres_kernel;
-							p->acc.x=p->acc.x-rel_pos.x*temp_force/r;
-							p->acc.y=p->acc.y-rel_pos.y*temp_force/r;
-							p->acc.z=p->acc.z-rel_pos.z*temp_force/r;
+							p->acc.m_x=p->acc.m_x-rel_pos.m_x*temp_force/r;
+							p->acc.m_y=p->acc.m_y-rel_pos.m_y*temp_force/r;
+							p->acc.m_z=p->acc.m_z-rel_pos.m_z*temp_force/r;
 
-							rel_vel.x=np->ev.x-p->ev.x;
-							rel_vel.y=np->ev.y-p->ev.y;
-							rel_vel.z=np->ev.z-p->ev.z;
+							rel_vel.m_x=np->ev.m_x-p->ev.m_x;
+							rel_vel.m_y=np->ev.m_y-p->ev.m_y;
+							rel_vel.m_z=np->ev.m_z-p->ev.m_z;
 
 							visc_kernel=visco_value*(kernel-r);
 							temp_force=V * viscosity * visc_kernel;
-							p->acc.x=p->acc.x + rel_vel.x*temp_force; 
-							p->acc.y=p->acc.y + rel_vel.y*temp_force; 
-							p->acc.z=p->acc.z + rel_vel.z*temp_force; 
+							p->acc.m_x=p->acc.m_x + rel_vel.m_x*temp_force;
+							p->acc.m_y=p->acc.m_y + rel_vel.m_y*temp_force;
+							p->acc.m_z=p->acc.m_z + rel_vel.m_z*temp_force;
 
 							float temp=(-1) * grad_poly6 * V * pow(kernel_2-r2, 2);
-							grad_color.x += temp * rel_pos.x;
-							grad_color.y += temp * rel_pos.y;
-							grad_color.z += temp * rel_pos.z;
+							grad_color.m_x += temp * rel_pos.m_x;
+							grad_color.m_y += temp * rel_pos.m_y;
+							grad_color.m_z += temp * rel_pos.m_z;
 							lplc_color += lplc_poly6 * V * (kernel_2-r2) * (r2-3/4*(kernel_2-r2));
 						}
 
@@ -336,13 +337,13 @@ void SPHSystem::comp_force_adv()
 		}
 
 		lplc_color+=self_lplc_color/p->dens;
-		p->surf_norm=sqrt(grad_color.x*grad_color.x+grad_color.y*grad_color.y+grad_color.z*grad_color.z);
+		p->surf_norm=sqrt(grad_color.m_x*grad_color.m_x+grad_color.m_y*grad_color.m_y+grad_color.m_z*grad_color.m_z);
 
 		if(p->surf_norm > surf_norm)
 		{
-			p->acc.x+=surf_coe * lplc_color * grad_color.x / p->surf_norm;
-			p->acc.y+=surf_coe * lplc_color * grad_color.y / p->surf_norm;
-			p->acc.z+=surf_coe * lplc_color * grad_color.z / p->surf_norm;
+			p->acc.m_x+=surf_coe * lplc_color * grad_color.m_x / p->surf_norm;
+			p->acc.m_y+=surf_coe * lplc_color * grad_color.m_y / p->surf_norm;
+			p->acc.m_z+=surf_coe * lplc_color * grad_color.m_z / p->surf_norm;
 		}
 	}
 }
@@ -354,98 +355,98 @@ void SPHSystem::advection()
 	{
 		p=&(mem[i]);
 
-		p->vel.x=p->vel.x+p->acc.x*time_step/p->dens+gravity.x*time_step;
-		p->vel.y=p->vel.y+p->acc.y*time_step/p->dens+gravity.y*time_step;
-		p->vel.z=p->vel.z+p->acc.z*time_step/p->dens+gravity.z*time_step;
+		p->vel.m_x=p->vel.m_x+p->acc.m_x*time_step/p->dens+gravity.m_x*time_step;
+		p->vel.m_y=p->vel.m_y+p->acc.m_y*time_step/p->dens+gravity.m_y*time_step;
+		p->vel.m_z=p->vel.m_z+p->acc.m_z*time_step/p->dens+gravity.m_z*time_step;
 
-		p->pos.x=p->pos.x+p->vel.x*time_step;
-		p->pos.y=p->pos.y+p->vel.y*time_step;
-		p->pos.z=p->pos.z+p->vel.z*time_step;
+		p->pos.m_x=p->pos.m_x+p->vel.m_x*time_step;
+		p->pos.m_y=p->pos.m_y+p->vel.m_y*time_step;
+		p->pos.m_z=p->pos.m_z+p->vel.m_z*time_step;
 
-		if(p->pos.x >= world_size.x-BOUNDARY)
+		if(p->pos.m_x >= world_size.m_x-BOUNDARY)
 		{
-			p->vel.x=p->vel.x*wall_damping;
-			p->pos.x=world_size.x-BOUNDARY;
+			p->vel.m_x=p->vel.m_x*wall_damping;
+			p->pos.m_x=world_size.m_x-BOUNDARY;
 		}
 
-		if(p->pos.x < 0.0f)
+		if(p->pos.m_x < 0.0f)
 		{
-			p->vel.x=p->vel.x*wall_damping;
-			p->pos.x=0.0f;
+			p->vel.m_x=p->vel.m_x*wall_damping;
+			p->pos.m_x=0.0f;
 		}
 
-		if(p->pos.y >= world_size.y-BOUNDARY)
+		if(p->pos.m_y >= world_size.m_y-BOUNDARY)
 		{
-			p->vel.y=p->vel.y*wall_damping;
-			p->pos.y=world_size.y-BOUNDARY;
+			p->vel.m_y=p->vel.m_y*wall_damping;
+			p->pos.m_y=world_size.m_y-BOUNDARY;
 		}
 
-		if(p->pos.y < 0.0f)
+		if(p->pos.m_y < 0.0f)
 		{
-			p->vel.y=p->vel.y*wall_damping;
-			p->pos.y=0.0f;
+			p->vel.m_y=p->vel.m_y*wall_damping;
+			p->pos.m_y=0.0f;
 		}
 
-		if(p->pos.z >= world_size.z-BOUNDARY)
+		if(p->pos.m_z >= world_size.m_z-BOUNDARY)
 		{
-			p->vel.z=p->vel.z*wall_damping;
-			p->pos.z=world_size.z-BOUNDARY;
+			p->vel.m_z=p->vel.m_z*wall_damping;
+			p->pos.m_z=world_size.m_z-BOUNDARY;
 		}
 
-		if(p->pos.z < 0.0f)
+		if(p->pos.m_z < 0.0f)
 		{
-			p->vel.z=p->vel.z*wall_damping;
-			p->pos.z=0.0f;
+			p->vel.m_z=p->vel.m_z*wall_damping;
+			p->pos.m_z=0.0f;
 		}
 
-		p->ev.x=(p->ev.x+p->vel.x)/2;
-		p->ev.y=(p->ev.y+p->vel.y)/2;
-		p->ev.z=(p->ev.z+p->vel.z)/2;
+		p->ev.m_x=(p->ev.m_x+p->vel.m_x)/2;
+		p->ev.m_y=(p->ev.m_y+p->vel.m_y)/2;
+		p->ev.m_z=(p->ev.m_z+p->vel.m_z)/2;
 	}
 }
 
-int3 SPHSystem::calc_cell_pos(float3 p)
+int3 SPHSystem::calc_cell_pos(vec3 p)
 {
 	int3 cell_pos;
-	cell_pos.x = int(floor((p.x) / cell_size));
-	cell_pos.y = int(floor((p.y) / cell_size));
-	cell_pos.z = int(floor((p.z) / cell_size));
+	cell_pos.m_x = int(floor((p.m_x) / cell_size));
+	cell_pos.m_y = int(floor((p.m_y) / cell_size));
+	cell_pos.m_z = int(floor((p.m_z) / cell_size));
 
     return cell_pos;
 }
 
 uint SPHSystem::calc_cell_hash(int3 cell_pos)
 {
-	if(cell_pos.x<0 || cell_pos.x>=(int)grid_size.x || cell_pos.y<0 || cell_pos.y>=(int)grid_size.y || cell_pos.z<0 || cell_pos.z>=(int)grid_size.z)
+	if(cell_pos.m_x<0 || cell_pos.m_x>=(int)grid_size.m_x || cell_pos.m_y<0 || cell_pos.m_y>=(int)grid_size.m_y || cell_pos.m_z<0 || cell_pos.m_z>=(int)grid_size.m_z)
 	{
 		return (uint)0xffffffff;
 	}
 
-	cell_pos.x = cell_pos.x & (grid_size.x-1);  
-    cell_pos.y = cell_pos.y & (grid_size.y-1);  
-	cell_pos.z = cell_pos.z & (grid_size.z-1);  
+        cell_pos.m_x = cell_pos.m_x & (grid_size.m_x-1);
+        cell_pos.m_y = cell_pos.m_y & (grid_size.m_y-1);
+        cell_pos.m_z = cell_pos.m_z & (grid_size.m_z-1);
 
-	return ((uint)(cell_pos.z))*grid_size.y*grid_size.x + ((uint)(cell_pos.y))*grid_size.x + (uint)(cell_pos.x);
+        return ((uint)(cell_pos.m_z))*grid_size.m_y*grid_size.m_x + ((uint)(cell_pos.m_y))*grid_size.m_x + (uint)(cell_pos.m_x);
 }
 
-float SPHSystem::length(float3 vector)
+float SPHSystem::length(vec3 vector)
 {
-  float X = vector.x;
-  float Y = vector.y;
-  float Z = vector.z;
+  float X = vector.m_x;
+  float Y = vector.m_y;
+  float Z = vector.m_z;
   return sqrt( X * X + Y * Y + Z * Z );
 }
 
-float3 SPHSystem::normalize(float3 vector)
+vec3 SPHSystem::normalize(vec3 vector)
 {
-  float3 normal;
+  vec3 normal;
   float vecLength = length(vector);
 
   if(vecLength != 0)
   {
-    normal.x = vector.x / vecLength;
-    normal.y = vector.y / vecLength;
-    normal.z = vector.z / vecLength;
+    normal.m_x = vector.m_x / vecLength;
+    normal.m_y = vector.m_y / vecLength;
+    normal.m_z = vector.m_z / vecLength;
   }
 
   return normal;
@@ -455,23 +456,18 @@ float3 SPHSystem::normalize(float3 vector)
 void SPHSystem::driftVelocity()
 {
   Particle *p;
+  Particle *np;
+  vec3 pressureGradient;
 
-  for(uint i=0; i<num_particle; i++)
+  for( uint i = 0; i<num_particle; i++)
   {
-    if ( prevVel.x != NULL )
-    {
-      float3 directionVelocity;
-      directionVelocity.x = (p->vel.x * normalize(p->vel).x);
-      directionVelocity.y = (p->vel.y * normalize(p->vel).y);
-      directionVelocity.z = (p->vel.z * normalize(p->vel).z);
+    p=&(mem[i]);
 
-      acceleration.x = gravity.x - directionVelocity.x - ( p->vel.x - prevVel.x / time_step );
-      acceleration.y = gravity.y - directionVelocity.y - ( p->vel.y - prevVel.y / time_step );
-      acceleration.z = gravity.z - directionVelocity.z - ( p->vel.z - prevVel.z / time_step );
+    //pressureGradient += p->mass * ()
 
-
-    }
   }
+
+
 
  // drift_velocity = 1 * (rest_density - mass * rest_density) * acceleration - 1 * (normalize(p->pres) );
   prevVel = drift_velocity;

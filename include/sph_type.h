@@ -24,25 +24,67 @@
 
 typedef unsigned int uint;
 
-struct float3
-{
-	float x;
-	float y;
-	float z;
-};
+//struct float3
+//{
+//	float x;
+//	float y;
+//	float z;
+//};
 
 struct int3
 {
-	int x;
-	int y;
-	int z;
+	int m_x;
+	int m_y;
+	int m_z;
 };
 
 struct uint3
 {
-	uint x;
-	uint y;
-	uint z;
+	uint m_x;
+	uint m_y;
+	uint m_z;
+};
+
+class vec3
+{
+public:
+  vec3() : m_x(0.0f), m_y(0.0f), m_z(0.0f) {}
+
+  vec3(float _x, float _y, float _z) : m_x(_x), m_y(_y), m_z(_z) {}
+
+  struct
+  {
+    float m_x;
+    float m_y;
+    float m_z;
+  };
+
+void operator+=( const vec3& _v) { m_x += _v.m_x;
+                                   m_y += _v.m_y;
+                                   m_y += _v.m_z; }
+
+void operator-=( const vec3& _v) { m_x -= _v.m_x;
+                                   m_y -= _v.m_y;
+                                   m_y -= _v.m_z; }
+
+void operator*=( float _v) { m_x *= _v;
+                             m_y *= _v;
+                             m_y *= _v; }
+
+void operator/=( float _v) { m_x /= _v;
+                             m_y /= _v;
+                             m_y /= _v; }
+
+vec3 operator/( float _v) { return vec3(m_x/_v, m_y/_v, m_z/_v); }
+
+vec3 operator*( float _v) { return vec3(m_x*_v, m_y*_v, m_z*_v); }
+
+vec3 operator+( const vec3 &_v) { return vec3(m_x+_v.m_x, m_y+_v.m_y, m_z+_v.m_z); }
+
+vec3 operator-( const vec3 &_v) { return vec3(m_x-_v.m_x, m_y-_v.m_y, m_z-_v.m_z); }
+
+vec3 operator=( const vec3 &_v) { m_x=_v.m_x, m_y=_v.m_y, m_z=_v.m_z; return *this; }
+
 };
 
 #endif

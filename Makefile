@@ -50,10 +50,14 @@ OBJECTS_DIR   = obj/
 
 SOURCES       = src/sph_main.cpp \
 		src/sph_system.cpp \
-		src/sph_timer.cpp 
+		src/sph_timer.cpp \
+		src/sph_phase.cpp \
+		src/sph_particle.cpp 
 OBJECTS       = obj/sph_main.o \
 		obj/sph_system.o \
-		obj/sph_timer.o
+		obj/sph_timer.o \
+		obj/sph_phase.o \
+		obj/sph_particle.o
 DIST          = /opt/Qt5.7.0/5.7/gcc_64/mkspecs/features/spec_pre.prf \
 		/opt/Qt5.7.0/5.7/gcc_64/mkspecs/common/unix.conf \
 		/opt/Qt5.7.0/5.7/gcc_64/mkspecs/common/linux.conf \
@@ -211,9 +215,13 @@ DIST          = /opt/Qt5.7.0/5.7/gcc_64/mkspecs/features/spec_pre.prf \
 		include/sph_header.h \
 		include/sph_system.h \
 		include/sph_timer.h \
-		include/sph_type.h src/sph_main.cpp \
+		include/sph_type.h \
+		include/sph_phase.h \
+		include/sph_particle.h src/sph_main.cpp \
 		src/sph_system.cpp \
-		src/sph_timer.cpp
+		src/sph_timer.cpp \
+		src/sph_phase.cpp \
+		src/sph_particle.cpp
 QMAKE_TARGET  = SPHFluid
 DESTDIR       = 
 TARGET        = SPHFluid
@@ -556,8 +564,8 @@ dist: distdir FORCE
 distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
-	$(COPY_FILE) --parents include/sph_data.h include/sph_header.h include/sph_system.h include/sph_timer.h include/sph_type.h $(DISTDIR)/
-	$(COPY_FILE) --parents src/sph_main.cpp src/sph_system.cpp src/sph_timer.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents include/sph_data.h include/sph_header.h include/sph_system.h include/sph_timer.h include/sph_type.h include/sph_phase.h include/sph_particle.h $(DISTDIR)/
+	$(COPY_FILE) --parents src/sph_main.cpp src/sph_system.cpp src/sph_timer.cpp src/sph_phase.cpp src/sph_particle.cpp $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -603,16 +611,26 @@ obj/sph_main.o: src/sph_main.cpp include/sph_header.h \
 		include/sph_data.h \
 		include/sph_type.h \
 		include/sph_timer.h \
-		include/sph_system.h
+		include/sph_system.h \
+		include/sph_phase.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/sph_main.o src/sph_main.cpp
 
 obj/sph_system.o: src/sph_system.cpp include/sph_system.h \
 		include/sph_type.h \
+		include/sph_phase.h \
 		include/sph_header.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/sph_system.o src/sph_system.cpp
 
 obj/sph_timer.o: src/sph_timer.cpp include/sph_timer.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/sph_timer.o src/sph_timer.cpp
+
+obj/sph_phase.o: src/sph_phase.cpp include/sph_phase.h \
+		include/sph_system.h \
+		include/sph_type.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/sph_phase.o src/sph_phase.cpp
+
+obj/sph_particle.o: src/sph_particle.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/sph_particle.o src/sph_particle.cpp
 
 ####### Install
 
