@@ -25,7 +25,7 @@
 
 SPHSystem::SPHSystem()
 {
-	max_particle=30000;
+	max_particle=300000;
 	num_particle=0;
 
 	kernel=0.04f;
@@ -63,14 +63,17 @@ SPHSystem::SPHSystem()
 	self_lplc_color=lplc_poly6*mass*kernel_2*(0-3/4*kernel_2);
 
 	mem=(Particle *)malloc(sizeof(Particle)*max_particle);
+
 	cell=(Particle **)malloc(sizeof(Particle *)*tot_cell);
 
 	phase1 = new Phase;
-	phaseList.push_back(*phase1);
+	phaseList.push_back(phase1);
 	num_phases++;
 	phase2 = new Phase;
-	phaseList.push_back(*phase2);
+	phaseList.push_back(phase2);
 	num_phases++;
+	phase1->phaseColour = vec3(1.0f, 0.0f, 0.0f);
+	phase2->phaseColour = vec3(0.0f, 0.0f, 1.0f);
 
 	sys_running=0;
 
@@ -105,8 +108,17 @@ void SPHSystem::animation()
 	for( uint i = 0; i<num_phases; i++ )
 	{
 	  build_table(phaseList[i]);
+	}
+	for( uint i = 0; i<num_phases; i++ )
+	{
 	  comp_dens_pres(phaseList[i]);
+	}
+	for( uint i = 0; i<num_phases; i++ )
+	{
 	  comp_force_adv(phaseList[i]);
+	}
+	for( uint i = 0; i<num_phases; i++ )
+	{
 	  advection(phaseList[i]);
 	}
 }
@@ -120,38 +132,44 @@ void SPHSystem::init_system()
 	vel.m_y=0.0f;
 	vel.m_z=0.0f;
 
-	for(pos.m_x=world_size.m_x*0.0f; pos.m_x<world_size.m_x*0.5f; pos.m_x+=(kernel*0.5f))
+	for(pos.m_x=world_size.m_x*0.0f; pos.m_x<world_size.m_x*0.8f; pos.m_x+=(kernel*0.5f))
 	{
-		for(pos.m_y=world_size.m_y*0.0f; pos.m_y<world_size.m_y*0.5f; pos.m_y+=(kernel*0.5f))
+		for(pos.m_y=world_size.m_y*0.0f; pos.m_y<world_size.m_y*0.8f; pos.m_y+=(kernel*0.5f))
 		{
-			for(pos.m_z=world_size.m_z*0.0f; pos.m_z<world_size.m_z*0.5f; pos.m_z+=(kernel*0.5f))
+			for(pos.m_z=world_size.m_z*0.0f; pos.m_z<world_size.m_z*0.8f; pos.m_z+=(kernel*0.5f))
 			{
-				add_particle(*phase1, pos, vel);
-
+				add_particle(phase1, pos, vel);
 			}
 		}
 	}
 
-	for(pos.m_x=world_size.m_x*0.0f; pos.m_x<world_size.m_x*0.4f; pos.m_x+=(kernel*0.5f))
+	for(pos.m_x=world_size.m_x*0.0f; pos.m_x<world_size.m_x*0.8f; pos.m_x+=(kernel*0.5f))
 	{
-		for(pos.m_y=world_size.m_y*0.0f; pos.m_y<world_size.m_y*0.5f; pos.m_y+=(kernel*0.5f))
+		for(pos.m_y=world_size.m_y*0.0f; pos.m_y<world_size.m_y*0.8f; pos.m_y+=(kernel*0.5f))
 		{
-			for(pos.m_z=world_size.m_z*0.0f; pos.m_z<world_size.m_z*0.5f; pos.m_z+=(kernel*0.5f))
+			for(pos.m_z=world_size.m_z*0.0f; pos.m_z<world_size.m_z*0.8f; pos.m_z+=(kernel*0.5f))
 			{
 
-				add_particle(*phase2, pos, vel);
+				add_particle(phase2, pos+vec3(0.0f, 0.01f, 0.0f), vel);
 			}
 		}
 	}
 
-	printf("Init Particle: %u\n", num_particle);
+	std::cout<<phase1->particleList.size() << "\n";
+	std::cout<< phaseList.size() << "\n";
+	std::cout<< phaseList[0]->particleList.size() << "\n";;
+	std::cout<<"Init Particle: "<<num_particle<<"\n";
 }
 
-void SPHSystem::add_particle(Phase phase, vec3 pos, vec3 vel)
+void SPHSystem::add_particle(Phase *phase, vec3 pos, vec3 vel)
 {
+//  if(phase->numParticle != 0)
+//  {
 	Particle *p=&(mem[num_particle]);
 
-	p->id=num_particle;
+	//std::cout<<num_particle<<"\n";
+
+	p->id=phase->numParticle;
 
 	p->pos=pos;
 	p->vel=vel;
@@ -166,14 +184,47 @@ void SPHSystem::add_particle(Phase phase, vec3 pos, vec3 vel)
 	p->restDensity=rest_density;
 	p->pressure=0.0f;
 	p->restMass=0.01f;
+	p->colour = phase->phaseColour;
 
 	p->next=NULL;
-	phase.addParticle(p);
+	phase->particleList.push_back(p);
+//	Particle test = (phase->particleList[phase->numParticle]);
+//	std::cout<<"stuff: "<<test.pos.m_x<<"\n";
+//  }
+//  else
+//  {
+//    std::cerr<<"hi";
+//    Particle *o = new Particle;
+//    phase->particleList.push_back(o);
+//    o->id=phase->numParticle;
 
+//    o->pos=pos;
+//    o->vel=vel;
+
+//    o->acc.m_x=0.0f;
+//    o->acc.m_y=0.0f;
+//    o->acc.m_z=0.0f;
+//    o->ev.m_x=0.0f;
+//    o->ev.m_y=0.0f;
+//    o->ev.m_z=0.0f;
+
+//    o->restDensity=rest_density;
+//    o->pressure=0.0f;
+//    o->restMass=0.01f;
+//    o->colour = phase->phaseColour;
+
+//    o->next=NULL;
+//    phase->particleList.push_back(o);
+
+
+//  }
+
+	phase->numParticle++;
 	num_particle++;
+	//std::cout<<"num: "<<num_particle<<"\n";
 }
 
-void SPHSystem::build_table(Phase phase)
+void SPHSystem::build_table(Phase *phase)
 {
 	Particle *p;
 	uint hash;
@@ -183,9 +234,11 @@ void SPHSystem::build_table(Phase phase)
 		cell[i]=NULL;
 	}
 
-	for(uint i=0; i<num_particle; i++)
+	for(uint i=0; i<phase->numParticle; i++)
 	{
-		p=&(phase.particleList[i]);
+	  //std::cerr<<i<<"\n";
+		p=phase->particleList[i];
+		//std::cerr<<p->pos.m_x<<"\n";
 		hash=calc_cell_hash(calc_cell_pos(p->pos));
 
 		if(cell[hash] == NULL)
@@ -201,7 +254,7 @@ void SPHSystem::build_table(Phase phase)
 	}
 }
 
-void SPHSystem::comp_dens_pres(Phase phase)
+void SPHSystem::comp_dens_pres(Phase *phase)
 {
 	Particle *p;
 	Particle *np;
@@ -213,9 +266,9 @@ void SPHSystem::comp_dens_pres(Phase phase)
 	vec3 rel_pos;
 	float r2;
 
-	for(uint i=0; i<num_particle; i++)
+	for(uint i=0; i<phase->numParticle; i++)
 	{
-		p=&(phase.particleList[i]);
+		p=phase->particleList[i];
 		cell_pos=calc_cell_pos(p->pos);
 
 		p->restDensity=0.0f;
@@ -238,6 +291,7 @@ void SPHSystem::comp_dens_pres(Phase phase)
 					}
 
 					np=cell[hash];
+					int neighbornum = 0;
 					while(np != NULL)
 					{
 						rel_pos.m_x=np->pos.m_x-p->pos.m_x;
@@ -264,7 +318,7 @@ void SPHSystem::comp_dens_pres(Phase phase)
 	}
 }
 
-void SPHSystem::comp_force_adv(Phase phase)
+void SPHSystem::comp_force_adv(Phase *phase)
 {
 	Particle *p;
 	Particle *np;
@@ -288,9 +342,9 @@ void SPHSystem::comp_force_adv(Phase phase)
 	vec3 grad_color;
 	float lplc_color;
 
-	for(uint i=0; i<num_particle; i++)
+	for(uint i=0; i<phase->numParticle; i++)
 	{
-		p=&(phase.particleList[i]);
+		p=phase->particleList[i];
 		cell_pos=calc_cell_pos(p->pos);
 
 		p->acc.m_x=0.0f;
@@ -373,12 +427,12 @@ void SPHSystem::comp_force_adv(Phase phase)
 	}
 }
 
-void SPHSystem::advection(Phase phase)
+void SPHSystem::advection(Phase *phase)
 {
 	Particle *p;
-	for(uint i=0; i<num_particle; i++)
+	for(uint i=0; i<phase->numParticle; i++)
 	{
-		p=&(phase.particleList[i]);
+		p=phase->particleList[i];
 
 		p->vel.m_x=p->vel.m_x+p->acc.m_x*time_step/p->restDensity+gravity.m_x*time_step;
 		p->vel.m_y=p->vel.m_y+p->acc.m_y*time_step/p->restDensity+gravity.m_y*time_step;

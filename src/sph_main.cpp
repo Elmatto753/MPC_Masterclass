@@ -31,7 +31,7 @@
 
 SPHSystem *sph;
 
-SPHSystem *sph2;
+//SPHSystem *sph2;
 
 Timer *sph_timer;
 char *window_title;
@@ -173,9 +173,9 @@ void init_sph_system()
 
 	sph=new SPHSystem();
 	sph->init_system();
-	sph2=new SPHSystem();
-	sph2->init_system();
-	sph2->mass = 0.05f;
+//	sph2=new SPHSystem();
+//	sph2->init_system();
+//	sph2->mass = 0.05f;
 
 	sph_timer=new Timer();
 	window_title=(char *)malloc(sizeof(char)*50);
@@ -206,26 +206,28 @@ void init_ratio()
 void render_particles()
 {
 	glPointSize(1.0f);
-	glColor3f(0.2f, 0.2f, 1.0f);
+
 
 	for(uint i=0; i<sph->num_particle; i++)
 	{
+	  glColor3f(sph->mem[i].colour.m_x,sph->mem[i].colour.m_y,sph->mem[i].colour.m_z);
+
 		glBegin(GL_POINTS);
 			glVertex3f(sph->mem[i].pos.m_x*sim_ratio.m_x+real_world_origin.m_x,
-						sph->mem[i].pos.m_y*sim_ratio.m_y+real_world_origin.m_y,
-						sph->mem[i].pos.m_z*sim_ratio.m_z+real_world_origin.m_z);
+				   sph->mem[i].pos.m_y*sim_ratio.m_y+real_world_origin.m_y,
+				   sph->mem[i].pos.m_z*sim_ratio.m_z+real_world_origin.m_z);
 		glEnd();
 	}
 
-	glColor3f(0.5f, 0.1f, 0.1f);
-	for(uint i=0; i<sph2->num_particle; i++)
-	{
-		glBegin(GL_POINTS);
-			glVertex3f(sph2->mem[i].pos.m_x*sim_ratio.m_x+real_world_origin.m_x,
-						sph2->mem[i].pos.m_y*sim_ratio.m_y+real_world_origin.m_y,
-						sph2->mem[i].pos.m_z*sim_ratio.m_z+real_world_origin.m_z);
-		glEnd();
-	}
+//	glColor3f(0.5f, 0.1f, 0.1f);
+//	for(uint i=0; i<sph2->num_particle; i++)
+//	{
+//		glBegin(GL_POINTS);
+//			glVertex3f(sph2->mem[i].pos.m_x*sim_ratio.m_x+real_world_origin.m_x,
+//						sph2->mem[i].pos.m_y*sim_ratio.m_y+real_world_origin.m_y,
+//						sph2->mem[i].pos.m_z*sim_ratio.m_z+real_world_origin.m_z);
+//		glEnd();
+//	}
 }
 
 void display_func()
@@ -248,7 +250,7 @@ void display_func()
     glRotatef(yRot, 0.0f, 1.0f, 0.0f);
 
 	sph->animation();
-	sph2->animation();
+//	sph2->animation();
 
 	glUseProgram(p);
 	render_particles();
@@ -292,7 +294,7 @@ void keyboard_func(unsigned char key, int x, int y)
 	if(key == ' ')
 	{
 		sph->sys_running=1-sph->sys_running;
-		sph2->sys_running=1-sph2->sys_running;
+	//	sph2->sys_running=1-sph2->sys_running;
 	}
 
 	if(key == 'w')

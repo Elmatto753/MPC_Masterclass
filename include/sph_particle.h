@@ -12,6 +12,7 @@ public:
 
 	vec3 acc;
 	vec3 ev;
+	vec3 colour;
 
 	float restDensity;
 	float pressure;

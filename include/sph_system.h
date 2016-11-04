@@ -74,7 +74,7 @@ public:
 	Particle *mem;
 	Particle **cell;
 
-	std::vector<Phase> phaseList;
+	std::vector<Phase *> phaseList;
 
 	uint num_phases;
 
@@ -85,13 +85,13 @@ public:
 	~SPHSystem();
 	void animation();
 	void init_system();
-	void add_particle(Phase phase, vec3 pos, vec3 vel);
+	void add_particle(Phase *phase, vec3 pos, vec3 vel);
 
 private:
-	void build_table(Phase phase);
-	void comp_dens_pres(Phase phase);
-	void comp_force_adv(Phase phase);
-	void advection(Phase phase);
+	void build_table(Phase *phase);
+	void comp_dens_pres(Phase *phase);
+	void comp_force_adv(Phase *phase);
+	void advection(Phase *phase);
 	float length(vec3 vector);
 	vec3 normalize(vec3 vector);
 	void driftVelocity();
