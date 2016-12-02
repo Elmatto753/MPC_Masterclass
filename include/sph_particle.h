@@ -15,6 +15,7 @@ public:
 	vec3 colour;
 
 	float restDensity;
+	float interp_density;
 	float pressure;
 	float restMass;
 	float viscosity;

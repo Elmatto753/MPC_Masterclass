@@ -46,6 +46,7 @@ public:
 	vec3 gravity;
 	float wall_damping;
 	float rest_density;
+
 	float gas_constant;
 	float viscosity;
 	float time_step;
@@ -89,9 +90,12 @@ public:
 
 private:
 	void build_table(Phase *phase);
-	void comp_dens_pres(Phase *phase);
+	void comp_dens_pres();
 	void comp_force_adv(Phase *phase);
 	void advection(Phase *phase);
+
+	float interp_mix_dens();
+	float poly6(Particle *p, Particle *np);
 	float length(vec3 vector);
 	vec3 normalize(vec3 vector);
 	void driftVelocity();
