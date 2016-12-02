@@ -19,6 +19,7 @@ public:
   float volumeFraction;
   float massFraction;
   float restDensity;
+  float restMass;
   vec3 phaseVelocity;
   float phasePressure;
   float stressTensor;

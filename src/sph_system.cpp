@@ -74,6 +74,10 @@ SPHSystem::SPHSystem()
 	num_phases++;
 	phase1->phaseColour = vec3(1.0f, 0.0f, 0.0f);
 	phase2->phaseColour = vec3(0.0f, 0.0f, 1.0f);
+	phase1->restDensity = 1000.0f;
+	phase2->restDensity = 500.0f;
+	phase1->restMass = 0.01f;
+	phase2->restMass = 0.05f;
 
 	sys_running=0;
 
@@ -105,22 +109,14 @@ void SPHSystem::animation()
 		return;
 	}
 
-	for( uint i = 0; i<num_phases; i++ )
-	{
-	  build_table(phaseList[i]);
-	}
+	build_table();
 
+	comp_dens_pres();
 
-	  comp_dens_pres();
+	comp_force_adv();
 
-	for( uint i = 0; i<num_phases; i++ )
-	{
-	  comp_force_adv(phaseList[i]);
-	}
-	for( uint i = 0; i<num_phases; i++ )
-	{
-	  advection(phaseList[i]);
-	}
+	advection();
+
 }
 
 void SPHSystem::init_system()
@@ -150,7 +146,7 @@ void SPHSystem::init_system()
 			for(pos.m_z=world_size.m_z*0.0f; pos.m_z<world_size.m_z*0.4f; pos.m_z+=(kernel*0.5f))
 			{
 
-				add_particle(phase2, pos+vec3(0.0f, 0.01f, 0.0f), vel);
+				add_particle(phase2, pos+vec3(0.3f, 0.0f, 0.0f), vel);
 			}
 		}
 	}
@@ -181,9 +177,9 @@ void SPHSystem::add_particle(Phase *phase, vec3 pos, vec3 vel)
 	p->ev.m_y=0.0f;
 	p->ev.m_z=0.0f;
 
-	p->restDensity=rest_density;
+	p->restDensity=phase->restDensity;
 	p->pressure=0.0f;
-	p->restMass=0.01f;
+	p->restMass=phase->restMass;
 	p->colour = phase->phaseColour;
 
 	p->next=NULL;
@@ -224,7 +220,7 @@ void SPHSystem::add_particle(Phase *phase, vec3 pos, vec3 vel)
 	//std::cout<<"num: "<<num_particle<<"\n";
 }
 
-void SPHSystem::build_table(Phase *phase)
+void SPHSystem::build_table()
 {
 	Particle *p;
 	uint hash;
@@ -234,24 +230,28 @@ void SPHSystem::build_table(Phase *phase)
 		cell[i]=NULL;
 	}
 
-	for(uint i=0; i<phase->numParticle; i++)
+	for(uint i=0; i<phaseList.size(); i++)
 	{
-	  //std::cerr<<i<<"\n";
-		p=phase->particleList[i];
-		//std::cerr<<p->pos.m_x<<"\n";
-		hash=calc_cell_hash(calc_cell_pos(p->pos));
+	  for(uint j=0; j<phaseList[i]->numParticle; j++)
+	  {
+	    //std::cerr<<i<<"\n";
+		  p=phaseList[i]->particleList[j];
+		  //std::cerr<<p->pos.m_x<<"\n";
+		  hash=calc_cell_hash(calc_cell_pos(p->pos));
 
-		if(cell[hash] == NULL)
-		{
-			p->next=NULL;
-			cell[hash]=p;
-		}
-		else
-		{
-			p->next=cell[hash];
-			cell[hash]=p;
-		}
-	}
+                  if(cell[hash] == NULL)
+                  {
+                          p->next=NULL;
+                          cell[hash]=p;
+                  }
+                  else
+                  {
+                          p->next=cell[hash];
+                          cell[hash]=p;
+                  }
+          }
+        }
+
 }
 
 void SPHSystem::comp_dens_pres()
@@ -309,7 +309,8 @@ void SPHSystem::comp_dens_pres()
 
 						p->restDensity=p->restDensity+self_dens;
 						p->interp_density += p->restMass * poly6(p, np);
-						p->pressure=(pow(p->interp_density / p->restDensity, 7) - 1) * ((gas_constant * p->restDensity) / 7) ;
+						p->pressure=(pow(p->interp_density / p->restDensity, 7) - 1) * ((gas_constant * p->restDensity) / 7);
+						//std::cout<<poly6(p, np)<<"\n";
 
 						np=np->next;
 
@@ -325,7 +326,7 @@ void SPHSystem::comp_dens_pres()
 	}
 }
 
-void SPHSystem::comp_force_adv(Phase *phase)
+void SPHSystem::comp_force_adv()
 {
 	Particle *p;
 	Particle *np;
@@ -349,146 +350,160 @@ void SPHSystem::comp_force_adv(Phase *phase)
 	vec3 grad_color;
 	float lplc_color;
 
-	for(uint i=0; i<phase->numParticle; i++)
+	for(uint i=0; i<phaseList.size(); i++)
 	{
-		p=phase->particleList[i];
-		cell_pos=calc_cell_pos(p->pos);
+	  for(uint j=0; j<phaseList[i]->numParticle; j++)
+	  {
+		  p=phaseList[i]->particleList[j];
+		  cell_pos=calc_cell_pos(p->pos);
 
-		p->acc.m_x=0.0f;
-		p->acc.m_y=0.0f;
-		p->acc.m_z=0.0f;
+                  p->acc.m_x=0.0f;
+                  p->acc.m_y=0.0f;
+                  p->acc.m_z=0.0f;
 
-		grad_color.m_x=0.0f;
-		grad_color.m_y=0.0f;
-		grad_color.m_z=0.0f;
-		lplc_color=0.0f;
-		
-		for(int x=-1; x<=1; x++)
-		{
-			for(int y=-1; y<=1; y++)
-			{
-				for(int z=-1; z<=1; z++)
-				{
-					near_pos.m_x=cell_pos.m_x+x;
-					near_pos.m_y=cell_pos.m_y+y;
-					near_pos.m_z=cell_pos.m_z+z;
-					hash=calc_cell_hash(near_pos);
+                  grad_color.m_x=0.0f;
+                  grad_color.m_y=0.0f;
+                  grad_color.m_z=0.0f;
+                  lplc_color=0.0f;
 
-					if(hash == 0xffffffff)
-					{
-						continue;
-					}
+                  for(int x=-1; x<=1; x++)
+                  {
+                          for(int y=-1; y<=1; y++)
+                          {
+                                  for(int z=-1; z<=1; z++)
+                                  {
+                                          near_pos.m_x=cell_pos.m_x+x;
+                                          near_pos.m_y=cell_pos.m_y+y;
+                                          near_pos.m_z=cell_pos.m_z+z;
+                                          hash=calc_cell_hash(near_pos);
 
-					np=cell[hash];
-					while(np != NULL)
-					{
-						rel_pos.m_x=p->pos.m_x-np->pos.m_x;
-						rel_pos.m_y=p->pos.m_y-np->pos.m_y;
-						rel_pos.m_z=p->pos.m_z-np->pos.m_z;
-						r2=rel_pos.m_x*rel_pos.m_x+rel_pos.m_y*rel_pos.m_y+rel_pos.m_z*rel_pos.m_z;
+                                          if(hash == 0xffffffff)
+                                          {
+                                                  continue;
+                                          }
 
-						if(r2 < kernel_2 && r2 > INF)
-						{
-							r=sqrt(r2);
-							V=mass/np->restDensity/2;
-							kernel_r=kernel-r;
+                                          np=cell[hash];
+                                          while(np != NULL)
+                                          {
+                                                  rel_pos=p->pos-np->pos;
+                                                  //rel_pos.m_y=p->pos.m_y-np->pos.m_y;
+                                                  //rel_pos.m_z=p->pos.m_z-np->pos.m_z;
+                                                  r2=rel_pos.m_x*rel_pos.m_x+rel_pos.m_y*rel_pos.m_y+rel_pos.m_z*rel_pos.m_z;
 
-							pres_kernel=spiky_value * kernel_r * kernel_r;
-							temp_force=V * (p->pressure+np->pressure) * pres_kernel;
-							p->acc.m_x=p->acc.m_x-rel_pos.m_x*temp_force/r;
-							p->acc.m_y=p->acc.m_y-rel_pos.m_y*temp_force/r;
-							p->acc.m_z=p->acc.m_z-rel_pos.m_z*temp_force/r;
+                                                  if(r2 < kernel_2 && r2 > INF)
+                                                  {
+                                                          r=sqrt(r2);
+                                                          V=mass/np->restDensity/2;
+                                                          kernel_r=kernel-r;
 
-							rel_vel.m_x=np->ev.m_x-p->ev.m_x;
-							rel_vel.m_y=np->ev.m_y-p->ev.m_y;
-							rel_vel.m_z=np->ev.m_z-p->ev.m_z;
+                                                          pres_kernel=spiky_value * kernel_r * kernel_r;
 
-							visc_kernel=visco_value*(kernel-r);
-							temp_force=V * viscosity * visc_kernel;
-							p->acc.m_x=p->acc.m_x + rel_vel.m_x*temp_force;
-							p->acc.m_y=p->acc.m_y + rel_vel.m_y*temp_force;
-							p->acc.m_z=p->acc.m_z + rel_vel.m_z*temp_force;
+                                                          temp_force=V * (p->pressure+np->pressure) * pres_kernel;
+                                                          p->acc.m_x=p->acc.m_x-rel_pos.m_x*temp_force/r;
+                                                          p->acc.m_y=p->acc.m_y-rel_pos.m_y*temp_force/r;
+                                                          p->acc.m_z=p->acc.m_z-rel_pos.m_z*temp_force/r;
 
-							float temp=(-1) * grad_poly6 * V * pow(kernel_2-r2, 2);
-							grad_color.m_x += temp * rel_pos.m_x;
-							grad_color.m_y += temp * rel_pos.m_y;
-							grad_color.m_z += temp * rel_pos.m_z;
-							lplc_color += lplc_poly6 * V * (kernel_2-r2) * (r2-3/4*(kernel_2-r2));
-						}
 
-						np=np->next;
-					}
-				}
-			}
-		}
+                                                          rel_vel.m_x=np->ev.m_x-p->ev.m_x;
+                                                          rel_vel.m_y=np->ev.m_y-p->ev.m_y;
+                                                          rel_vel.m_z=np->ev.m_z-p->ev.m_z;
 
-		lplc_color+=self_lplc_color/p->restDensity;
-		p->surf_norm=sqrt(grad_color.m_x*grad_color.m_x+grad_color.m_y*grad_color.m_y+grad_color.m_z*grad_color.m_z);
 
-		if(p->surf_norm > surf_norm)
-		{
-			p->acc.m_x+=surf_coe * lplc_color * grad_color.m_x / p->surf_norm;
-			p->acc.m_y+=surf_coe * lplc_color * grad_color.m_y / p->surf_norm;
-			p->acc.m_z+=surf_coe * lplc_color * grad_color.m_z / p->surf_norm;
-		}
-	}
+                                                          visc_kernel=visco_value*(kernel-r);
+                                                          temp_force=V * viscosity * visc_kernel;
+                                                          p->acc.m_x=p->acc.m_x + rel_vel.m_x*temp_force;
+                                                          p->acc.m_y=p->acc.m_y + rel_vel.m_y*temp_force;
+                                                          p->acc.m_z=p->acc.m_z + rel_vel.m_z*temp_force;
+
+                                                          float temp=(-1) * grad_poly6 * V * pow(kernel_2-r2, 2);
+                                                          grad_color.m_x += temp * rel_pos.m_x;
+                                                          grad_color.m_y += temp * rel_pos.m_y;
+                                                          grad_color.m_z += temp * rel_pos.m_z;
+                                                          lplc_color += lplc_poly6 * V * (kernel_2-r2) * (r2-3/4*(kernel_2-r2));
+                                                  }
+
+                                                  np=np->next;
+                                          }
+                                  }
+                          }
+                  }
+
+                  lplc_color+=self_lplc_color/p->restDensity;
+                  p->surf_norm=sqrt(grad_color.m_x*grad_color.m_x+grad_color.m_y*grad_color.m_y+grad_color.m_z*grad_color.m_z);
+
+                  if(p->surf_norm > surf_norm)
+                  {
+                          p->acc.m_x+=surf_coe * lplc_color * grad_color.m_x / p->surf_norm;
+                          p->acc.m_y+=surf_coe * lplc_color * grad_color.m_y / p->surf_norm;
+                          p->acc.m_z+=surf_coe * lplc_color * grad_color.m_z / p->surf_norm;
+
+
+                  }
+
+          }
+        }
+
 }
 
-void SPHSystem::advection(Phase *phase)
+void SPHSystem::advection()
 {
 	Particle *p;
-	for(uint i=0; i<phase->numParticle; i++)
+	for(uint i=0; i<phaseList.size(); i++)
 	{
-		p=phase->particleList[i];
+	  for(uint j=0; j<phaseList[i]->numParticle; j++)
+	  {
+		  p=phaseList[i]->particleList[j];
 
-		p->vel=p->vel+p->acc*time_step/p->restDensity+gravity*time_step;
-//		p->vel.m_y=p->vel.m_y+p->acc.m_y*time_step/p->restDensity+gravity.m_y*time_step;
-//		p->vel.m_z=p->vel.m_z+p->acc.m_z*time_step/p->restDensity+gravity.m_z*time_step;
 
-		p->pos=p->pos+p->vel*time_step;
-//		p->pos.m_y=p->pos.m_y+p->vel.m_y*time_step;
-//		p->pos.m_z=p->pos.m_z+p->vel.m_z*time_step;
+                  p->vel=p->vel+p->acc*time_step/-(p->interp_density/100)+gravity*time_step;
+  //		p->vel.m_y=p->vel.m_y+p->acc.m_y*time_step/p->restDensity+gravity.m_y*time_step;
+  //		p->vel.m_z=p->vel.m_z+p->acc.m_z*time_step/p->restDensity+gravity.m_z*time_step;
 
-		if(p->pos.m_x >= world_size.m_x-BOUNDARY)
-		{
-			p->vel.m_x=p->vel.m_x*wall_damping;
-			p->pos.m_x=world_size.m_x-BOUNDARY;
-		}
+                  p->pos=p->pos+p->vel*time_step;
+  //		p->pos.m_y=p->pos.m_y+p->vel.m_y*time_step;
+  //		p->pos.m_z=p->pos.m_z+p->vel.m_z*time_step;
 
-		if(p->pos.m_x < 0.0f)
-		{
-			p->vel.m_x=p->vel.m_x*wall_damping;
-			p->pos.m_x=0.0f;
-		}
+                  if(p->pos.m_x >= world_size.m_x-BOUNDARY)
+                  {
+                          p->vel.m_x=p->vel.m_x*wall_damping;
+                          p->pos.m_x=world_size.m_x-BOUNDARY;
+                  }
 
-		if(p->pos.m_y >= world_size.m_y-BOUNDARY)
-		{
-			p->vel.m_y=p->vel.m_y*wall_damping;
-			p->pos.m_y=world_size.m_y-BOUNDARY;
-		}
+                  if(p->pos.m_x < 0.0f)
+                  {
+                          p->vel.m_x=p->vel.m_x*wall_damping;
+                          p->pos.m_x=0.0f;
+                  }
 
-		if(p->pos.m_y < 0.0f)
-		{
-			p->vel.m_y=p->vel.m_y*wall_damping;
-			p->pos.m_y=0.0f;
-		}
+                  if(p->pos.m_y >= world_size.m_y-BOUNDARY)
+                  {
+                          p->vel.m_y=p->vel.m_y*wall_damping;
+                          p->pos.m_y=world_size.m_y-BOUNDARY;
+                  }
 
-		if(p->pos.m_z >= world_size.m_z-BOUNDARY)
-		{
-			p->vel.m_z=p->vel.m_z*wall_damping;
-			p->pos.m_z=world_size.m_z-BOUNDARY;
-		}
+                  if(p->pos.m_y < 0.0f)
+                  {
+                          p->vel.m_y=p->vel.m_y*wall_damping;
+                          p->pos.m_y=0.0f;
+                  }
 
-		if(p->pos.m_z < 0.0f)
-		{
-			p->vel.m_z=p->vel.m_z*wall_damping;
-			p->pos.m_z=0.0f;
-		}
+                  if(p->pos.m_z >= world_size.m_z-BOUNDARY)
+                  {
+                          p->vel.m_z=p->vel.m_z*wall_damping;
+                          p->pos.m_z=world_size.m_z-BOUNDARY;
+                  }
 
-		p->ev=(p->ev+p->vel)/2;
-//		p->ev.m_y=(p->ev.m_y+p->vel.m_y)/2;
-//		p->ev.m_z=(p->ev.m_z+p->vel.m_z)/2;
-	}
+                  if(p->pos.m_z < 0.0f)
+                  {
+                          p->vel.m_z=p->vel.m_z*wall_damping;
+                          p->pos.m_z=0.0f;
+                  }
+
+                  p->ev=(p->ev+p->vel)/2;
+  //		p->ev.m_y=(p->ev.m_y+p->vel.m_y)/2;
+  //		p->ev.m_z=(p->ev.m_z+p->vel.m_z)/2;
+          }
+        }
 }
 
 int3 SPHSystem::calc_cell_pos(vec3 p)
@@ -519,8 +534,14 @@ float SPHSystem::poly6(Particle *p, Particle *np)
 {
   vec3 r = np->pos - p->pos;
   float r2 = r.dot(r);
-
-  return poly6_value * pow(kernel_2 - r2, 3);
+  if(sqrt(r2)>kernel)
+  {
+    return 0;
+  }
+  else
+  {
+    return poly6_value * pow(kernel_2 - r2, 3);
+  }
 }
 
 float SPHSystem::length(vec3 vector)

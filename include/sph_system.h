@@ -89,10 +89,10 @@ public:
 	void add_particle(Phase *phase, vec3 pos, vec3 vel);
 
 private:
-	void build_table(Phase *phase);
+	void build_table();
 	void comp_dens_pres();
-	void comp_force_adv(Phase *phase);
-	void advection(Phase *phase);
+	void comp_force_adv();
+	void advection();
 
 	float interp_mix_dens();
 	float poly6(Particle *p, Particle *np);
