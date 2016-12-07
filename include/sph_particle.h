@@ -1,6 +1,7 @@
 #ifndef __SPH_PARTICLE_H__
 #define __SPH_PARTICLE_H__
 
+#include <vector>
 #include "sph_type.h"
 
 class Particle
@@ -19,8 +20,13 @@ public:
 	float pressure;
 	float restMass;
 	float viscosity;
+	float pressureGradient;
+	float diffusionGradient;
+	float driftVelocity;
 
 	float surf_norm;
+
+	std::vector<float> volumeFraction;
 
 	Particle *next;
 };

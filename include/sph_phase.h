@@ -16,7 +16,7 @@ public:
   ~Phase(){}
 
   uint max_particle;
-  float volumeFraction;
+//  float volumeFraction;
   float massFraction;
   float restDensity;
   float restMass;

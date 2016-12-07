@@ -183,6 +183,23 @@ void SPHSystem::add_particle(Phase *phase, vec3 pos, vec3 vel)
 	p->colour = phase->phaseColour;
 
 	p->next=NULL;
+
+	for(int i = 0; i<num_phases; i++)
+	{
+	  std::cout<<"i = "<<num_phases<<"\n";
+	  if(phaseList[i] != phase)
+	  {
+	    p->volumeFraction.push_back(0.0f);
+	  }
+
+	  else
+	  {
+	    p->volumeFraction.push_back(1.0f);
+	  }
+
+
+	}
+
 	phase->particleList.push_back(p);
 //	Particle test = (phase->particleList[phase->numParticle]);
 //	std::cout<<"stuff: "<<test.pos.m_x<<"\n";
@@ -214,6 +231,7 @@ void SPHSystem::add_particle(Phase *phase, vec3 pos, vec3 vel)
 
 
 //  }
+
 
 	phase->numParticle++;
 	num_particle++;
@@ -274,7 +292,7 @@ void SPHSystem::comp_dens_pres()
 		cell_pos=calc_cell_pos(p->pos);
 
 		//p->restDensity=0.0f;
-		p->pressure=0.0f;
+//		p->pressure=0.0f;
 
 		for(int x=-1; x<=1; x++)
 		{
@@ -310,7 +328,7 @@ void SPHSystem::comp_dens_pres()
 						p->restDensity=p->restDensity+self_dens;
 						p->interp_density += p->restMass * poly6(p, np);
 						p->pressure=(pow(p->interp_density / p->restDensity, 7) - 1) * ((gas_constant * p->restDensity) / 7);
-						//std::cout<<poly6(p, np)<<"\n";
+						//std::cout<<p->pressure<<"\n";
 
 						np=np->next;
 
@@ -399,26 +417,19 @@ void SPHSystem::comp_force_adv()
                                                           pres_kernel=spiky_value * kernel_r * kernel_r;
 
                                                           temp_force=V * (p->pressure+np->pressure) * pres_kernel;
-                                                          p->acc.m_x=p->acc.m_x-rel_pos.m_x*temp_force/r;
-                                                          p->acc.m_y=p->acc.m_y-rel_pos.m_y*temp_force/r;
-                                                          p->acc.m_z=p->acc.m_z-rel_pos.m_z*temp_force/r;
+                                                          p->acc=p->acc-rel_pos*temp_force/r;
 
 
-                                                          rel_vel.m_x=np->ev.m_x-p->ev.m_x;
-                                                          rel_vel.m_y=np->ev.m_y-p->ev.m_y;
-                                                          rel_vel.m_z=np->ev.m_z-p->ev.m_z;
 
+                                                          rel_vel=np->ev-p->ev;
 
                                                           visc_kernel=visco_value*(kernel-r);
                                                           temp_force=V * viscosity * visc_kernel;
-                                                          p->acc.m_x=p->acc.m_x + rel_vel.m_x*temp_force;
-                                                          p->acc.m_y=p->acc.m_y + rel_vel.m_y*temp_force;
-                                                          p->acc.m_z=p->acc.m_z + rel_vel.m_z*temp_force;
+                                                          p->acc=p->acc + rel_vel*temp_force;
+
 
                                                           float temp=(-1) * grad_poly6 * V * pow(kernel_2-r2, 2);
-                                                          grad_color.m_x += temp * rel_pos.m_x;
-                                                          grad_color.m_y += temp * rel_pos.m_y;
-                                                          grad_color.m_z += temp * rel_pos.m_z;
+                                                          grad_color += rel_pos * temp;
                                                           lplc_color += lplc_poly6 * V * (kernel_2-r2) * (r2-3/4*(kernel_2-r2));
                                                   }
 
@@ -506,6 +517,20 @@ void SPHSystem::advection()
         }
 }
 
+void SPHSystem::adv_vol_frac()
+{
+  Particle *p;
+  for(int i =0; i<phaseList.size(); i++)
+  {
+    for(int j = 0; j<phaseList[i]->particleList.size(); j++)
+    {
+      p = phaseList[i]->particleList[j];
+
+      p->volumeFraction = p->vel * -p->volumeFraction[i] - (p->volumeFraction[i] * p->driftVelocity) - p->vel * p->volumeFraction[i];
+    }
+  }
+}
+
 int3 SPHSystem::calc_cell_pos(vec3 p)
 {
 	int3 cell_pos;
@@ -572,13 +597,63 @@ void SPHSystem::driftVelocity()
 {
   Particle *p;
   Particle *np;
-  vec3 pressureGradient;
+//  vec3 pressureGradient;
+  int3 cell_pos;
+  int3 near_pos;
+  uint hash;
 
-  for( uint i = 0; i<num_particle; i++)
+  for(uint i=0; i<phaseList.size(); i++)
   {
-    p=&(mem[i]);
+    for(uint j=0; j<phaseList[i]->numParticle; j++)
+    {
+      p=phaseList[i]->particleList[j];
+
+      for(int x=-1; x<=1; x++)
+      {
+        for(int y=-1; y<=1; y++)
+        {
+          for(int z=-1; z<=1; z++)
+          {
+            near_pos.m_x=cell_pos.m_x+x;
+            near_pos.m_y=cell_pos.m_y+y;
+            near_pos.m_z=cell_pos.m_z+z;
+            hash=calc_cell_hash(near_pos);
+
+            if(hash == 0xffffffff)
+            {
+              continue;
+            }
+
+            np=cell[hash];
+
+            while(np != NULL)
+            {
+
+              p->pressureGradient += p->restMass/p->restDensity * (np->pressure - p->pressure) * poly6(p, np);
+              p->diffusionGradient += p->restMass/p->restDensity * (np->volumeFraction[i] - p->volumeFraction[i]) * poly6(p, np);
+            }
+          }
+        }
+      }
+
+
+    }
+
+  }
+
+
+  for(uint i=0; i<phaseList.size(); i++)
+  {
+    for(uint j=0; j<phaseList[i]->numParticle; j++)
+    {
+      p=phaseList[i]->particleList[j];
+
+//      drift_velocity = 1 * (p->restDensity - );
+
+
 
     //pressureGradient += p->mass * ()
+    }
 
   }
 
