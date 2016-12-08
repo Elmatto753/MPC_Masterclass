@@ -27,6 +27,7 @@ public:
 	float surf_norm;
 
 	std::vector<float> volumeFraction;
+	std::vector<float> massFraction;
 
 	Particle *next;
 };

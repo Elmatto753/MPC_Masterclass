@@ -111,6 +111,8 @@ void SPHSystem::animation()
 
 	build_table();
 
+	adv_vol_frac();
+
 	comp_dens_pres();
 
 	comp_force_adv();
@@ -186,15 +188,15 @@ void SPHSystem::add_particle(Phase *phase, vec3 pos, vec3 vel)
 
 	for(int i = 0; i<num_phases; i++)
 	{
-	  std::cout<<"i = "<<num_phases<<"\n";
+//	  std::cout<<"i = "<<num_phases<<"\n";
 	  if(phaseList[i] != phase)
 	  {
-	    p->volumeFraction.push_back(0.0f);
+	    p->volumeFraction.push_back(0.01f);
 	  }
 
 	  else
 	  {
-	    p->volumeFraction.push_back(1.0f);
+	    p->volumeFraction.push_back(0.99f);
 	  }
 
 
@@ -314,7 +316,7 @@ void SPHSystem::comp_dens_pres()
 					int neighbornum = 0;
 					while(np != NULL)
 					{
-						rel_pos=np->pos-p->pos;
+						rel_pos=p->pos-np->pos;
 						r2=rel_pos.m_x*rel_pos.m_x+rel_pos.m_y*rel_pos.m_y+rel_pos.m_z*rel_pos.m_z;
 
 						if(r2<INF || r2>=kernel_2)
@@ -403,7 +405,7 @@ void SPHSystem::comp_force_adv()
                                           np=cell[hash];
                                           while(np != NULL)
                                           {
-                                                  rel_pos=p->pos-np->pos;
+                                                  rel_pos= p->pos-np->pos;
                                                   //rel_pos.m_y=p->pos.m_y-np->pos.m_y;
                                                   //rel_pos.m_z=p->pos.m_z-np->pos.m_z;
                                                   r2=rel_pos.m_x*rel_pos.m_x+rel_pos.m_y*rel_pos.m_y+rel_pos.m_z*rel_pos.m_z;
@@ -525,10 +527,40 @@ void SPHSystem::adv_vol_frac()
     for(int j = 0; j<phaseList[i]->particleList.size(); j++)
     {
       p = phaseList[i]->particleList[j];
+      p->colour = vec3(0.0f, 0.0f, 0.0f);
 
-      p->volumeFraction = p->vel * -p->volumeFraction[i] - (p->volumeFraction[i] * p->driftVelocity) - p->vel * p->volumeFraction[i];
+      p->volumeFraction[i] += p->vel.dot(p->vel) * -p->volumeFraction[i] - (p->volumeFraction[i] * p->driftVelocity) - p->vel.dot(p->vel) * p->volumeFraction[i];
     }
   }
+
+  for(int i =0; i<phaseList.size(); i++)
+  {
+    for(int j = 0; j<phaseList[i]->particleList.size(); j++)
+    {
+      p = phaseList[i]->particleList[j];
+
+      float sum_vol_frac = 0.0f;
+      for(int k = 0; k<phaseList.size(); k++)
+      {
+        sum_vol_frac += p->volumeFraction[k];
+      }
+      if(sum_vol_frac != 1.0f)
+      {
+        float divisor = 1.0f/sum_vol_frac;
+        for(int l = 0; l<phaseList.size(); l++)
+        {
+          p->volumeFraction[l] *= divisor;
+          std::cout<<p->volumeFraction[l]<<"\n";
+
+        }
+      }
+      for(int m = 0; m<phaseList.size(); m++)
+      {
+        p->colour += phaseList[m]->phaseColour * p->volumeFraction[m];
+      }
+    }
+  }
+
 }
 
 int3 SPHSystem::calc_cell_pos(vec3 p)
@@ -557,7 +589,7 @@ uint SPHSystem::calc_cell_hash(int3 cell_pos)
 
 float SPHSystem::poly6(Particle *p, Particle *np)
 {
-  vec3 r = np->pos - p->pos;
+  vec3 r = p->pos - np->pos;
   float r2 = r.dot(r);
   if(sqrt(r2)>kernel)
   {
@@ -640,6 +672,24 @@ void SPHSystem::driftVelocity()
     }
 
   }
+
+  for(uint i=0; i<phaseList.size(); i++)
+  {
+    for(uint j=0; j<phaseList[i]->numParticle; j++)
+    {
+      p=phaseList[i]->particleList[j];
+      float sum_mass_density = 0.0f;
+
+      for(uint k = 0; k<phaseList.size(); k++)
+      {
+        p->massFraction[k] = (p->volumeFraction[k] * p->restDensity)/p->interp_density;
+        sum_mass_density += p->massFraction[k] * p->restDensity;
+      }
+
+    }
+
+  }
+
 
 
   for(uint i=0; i<phaseList.size(); i++)
