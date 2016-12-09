@@ -20,12 +20,17 @@ public:
 	float pressure;
 	float restMass;
 	float viscosity;
-	float pressureGradient;
-	float diffusionGradient;
-	float driftVelocity;
+	float conv_mom_change;
+	float div_viscosity_tensor;
+	vec3 pressureGradientk;
+	vec3 pressureGradientm;
+	vec3 diffusionGradient;
+
+	float sum_mass_density = 0.0f;
 
 	float surf_norm;
 
+	std::vector<vec3> driftVelocity;
 	std::vector<float> volumeFraction;
 	std::vector<float> massFraction;
 

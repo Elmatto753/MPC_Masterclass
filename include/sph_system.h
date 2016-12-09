@@ -97,6 +97,8 @@ private:
 
 	float interp_mix_dens();
 	float poly6(Particle *p, Particle *np);
+	vec3 spiky(Particle *p, Particle *np);
+	float visco(Particle *p, Particle *np);
 	float length(vec3 vector);
 	vec3 normalize(vec3 vector);
 	void driftVelocity();
