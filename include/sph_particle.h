@@ -9,7 +9,7 @@ class Particle
 public:
 	uint id;
 	vec3 pos;
-	vec3 vel;
+	vec3 vel = vec3(0.0f, 0.0f, 0.0f);
 
 	vec3 acc;
 	vec3 ev;
@@ -20,8 +20,8 @@ public:
 	float pressure;
 	float restMass;
 	float viscosity;
-	float conv_mom_change;
-	float div_viscosity_tensor;
+	vec3 conv_mom_change;
+	vec3 div_viscosity_tensor;
 	vec3 pressureGradientk;
 	vec3 pressureGradientm;
 	vec3 diffusionGradient;

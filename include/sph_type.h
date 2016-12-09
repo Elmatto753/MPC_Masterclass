@@ -83,6 +83,8 @@ vec3 operator*( float _v) { return vec3(m_x*_v, m_y*_v, m_z*_v); }
 
 vec3 operator*( double _v) { return vec3(m_x*_v, m_y*_v, m_z*_v); }
 
+vec3 operator*( int _v) { return vec3(m_x*_v, m_y*_v, m_z*_v); }
+
 vec3 operator*( const vec3& _v) { return vec3(m_x * _v.m_x, m_y * _v.m_y, m_z * _v.m_z); }
 
 vec3 operator+( const vec3 &_v) { return vec3(m_x + _v.m_x, m_y + _v.m_y, m_z + _v.m_z); }
