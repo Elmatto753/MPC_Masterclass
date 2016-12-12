@@ -27,6 +27,7 @@ public:
 	vec3 diffusionGradient;
 
 	float sum_mass_density = 0.0f;
+	vec3 sum_mass_pressure = vec3(0.0f, 0.0f, 0.0f);
 
 	float surf_norm;
 

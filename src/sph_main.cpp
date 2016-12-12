@@ -163,13 +163,13 @@ void draw_box(float ox, float oy, float oz, float width, float height, float len
 
 void init_sph_system()
 {
-	real_world_origin.m_x=-10.0f;
-	real_world_origin.m_y=-10.0f;
-	real_world_origin.m_z=-10.0f;
+	real_world_origin.m_x=-5.0f;
+	real_world_origin.m_y=-5.0f;
+	real_world_origin.m_z=-5.0f;
 
-	real_world_side.m_x=20.0f;
-	real_world_side.m_y=20.0f;
-	real_world_side.m_z=20.0f;
+	real_world_side.m_x=10.0f;
+	real_world_side.m_y=10.0f;
+	real_world_side.m_z=10.0f;
 
 	sph=new SPHSystem();
 	sph->init_system();
