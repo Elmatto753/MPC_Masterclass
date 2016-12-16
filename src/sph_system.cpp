@@ -22,6 +22,7 @@
 #include "sph_system.h"
 #include "sph_header.h"
 #include <iostream>
+#include <cassert>
 
 SPHSystem::SPHSystem()
 {
@@ -31,10 +32,10 @@ SPHSystem::SPHSystem()
 	kernel=0.04f;
 	mass=0.02f;
 
-	world_size.m_x=0.64f;
-	world_size.m_y=0.64f;
-	world_size.m_z=0.64f;
-	cell_size=0.02f;
+	world_size.m_x=0.16f;
+	world_size.m_y=0.16f;
+	world_size.m_z=0.16f;
+	cell_size=0.01f;
 	grid_size.m_x=(uint)ceil(world_size.m_x/cell_size);
 	grid_size.m_y=(uint)ceil(world_size.m_y/cell_size);
 	grid_size.m_z=(uint)ceil(world_size.m_z/cell_size);
@@ -47,7 +48,7 @@ SPHSystem::SPHSystem()
 	rest_density=1000.0f;
 	gas_constant=1.0f;
 	viscosity=6.5f;
-	time_step=0.003f;
+	time_step=0.006f;
 	surf_norm=6.0f;
 	surf_coe=0.1f;
 
@@ -132,25 +133,25 @@ void SPHSystem::init_system()
 	vel.m_y=0.0f;
 	vel.m_z=0.0f;
 
-	for(pos.m_x=world_size.m_x*0.0f; pos.m_x<world_size.m_x*0.2f; pos.m_x+=(kernel*0.3f))
+	for(pos.m_x=0.0f; pos.m_x<0.64f*0.1f; pos.m_x+=(0.05f*0.1f))
 	{
-		for(pos.m_y=world_size.m_y*0.0f; pos.m_y<world_size.m_y*0.2f; pos.m_y+=(kernel*0.3f))
+		for(pos.m_y=0.0f; pos.m_y<0.64f*0.1f; pos.m_y+=(0.05f*0.1f))
 		{
-			for(pos.m_z=world_size.m_z*0.0f; pos.m_z<world_size.m_z*0.2f; pos.m_z+=(kernel*0.3f))
+			for(pos.m_z=0.0f; pos.m_z<0.64f*0.1f; pos.m_z+=(0.05f*0.1f))
 			{
 				add_particle(phase1, pos, vel);
 			}
 		}
 	}
 
-	for(pos.m_x=world_size.m_x*0.0f; pos.m_x<world_size.m_x*0.2f; pos.m_x+=(kernel*0.3f))
+	for(pos.m_x=0.0f; pos.m_x<0.64f*0.1f; pos.m_x+=(0.05f*0.1f))
 	{
-		for(pos.m_y=world_size.m_y*0.0f; pos.m_y<world_size.m_y*0.2f; pos.m_y+=(kernel*0.3f))
+		for(pos.m_y=0.0f; pos.m_y<0.64f*0.1f; pos.m_y+=(0.05f*0.1f))
 		{
-			for(pos.m_z=world_size.m_z*0.0f; pos.m_z<world_size.m_z*0.2f; pos.m_z+=(kernel*0.3f))
+			for(pos.m_z=0.0f; pos.m_z<0.64f*0.1f; pos.m_z+=(0.05f*0.1f))
 			{
 
-				add_particle(phase2, pos+vec3(0.1f, 0.0f, 0.0f), vel);
+				add_particle(phase2, pos+vec3(0.08f, 0.0f, 0.0f), vel);
 			}
 		}
 	}
@@ -477,7 +478,7 @@ void SPHSystem::advection()
 		  p=phaseList[i]->particleList[j];
 
 
-                  p->vel=p->vel+p->acc*time_step/-(p->interp_density/100)+gravity*time_step;
+                  p->vel=p->vel+p->acc*time_step/-(p->interp_density)+gravity*time_step;
   //		p->vel.m_y=p->vel.m_y+p->acc.m_y*time_step/p->restDensity+gravity.m_y*time_step;
   //		p->vel.m_z=p->vel.m_z+p->acc.m_z*time_step/p->restDensity+gravity.m_z*time_step;
 
@@ -522,8 +523,6 @@ void SPHSystem::advection()
                   }
 
                   p->ev=(p->ev+p->vel)/2;
-  //		p->ev.m_y=(p->ev.m_y+p->vel.m_y)/2;
-  //		p->ev.m_z=(p->ev.m_z+p->vel.m_z)/2;
           }
         }
 }
@@ -538,7 +537,8 @@ void SPHSystem::adv_vol_frac()
       p = phaseList[i]->particleList[j];
 //      p->colour = vec3(0.0f, 0.0f, 0.0f);
 
-      p->volumeFraction[i] += p->vel.dot(p->vel) * -p->volumeFraction[i] - (sqrt(p->driftVelocity[i].dot(p->driftVelocity[i])) * p->volumeFraction[i]) - p->vel.dot(p->vel) * p->volumeFraction[i];
+      for(uint k = 0; k < phaseList.size(); k++)
+      p->volumeFraction[k] += length(p->vel) * -p->volumeFraction[k] - (length(p->driftVelocity[k]) * p->volumeFraction[k]) - length(p->vel) * p->volumeFraction[k];
     }
   }
 
@@ -553,6 +553,7 @@ void SPHSystem::adv_vol_frac()
       {
         sum_vol_frac += p->volumeFraction[k];
       }
+      //std::cout<<sum_vol_frac<<"\n";
       if(sum_vol_frac != 1.0f)
       {
         float divisor = 1.0f/sum_vol_frac;
@@ -563,9 +564,21 @@ void SPHSystem::adv_vol_frac()
 
         }
       }
+      if(sum_vol_frac == 0.0f || isnan(sum_vol_frac) == true)
+      {
+        p->volumeFraction[i] = 1.0f;
+        for(uint l = 0; l< phaseList.size(); l++)
+        {
+          if( l != i)
+          {
+            p->volumeFraction[l] = 0.0f;
+          }
+        }
+      }
       for(uint m = 0; m<phaseList.size(); m++)
       {
-        p->colour += phaseList[m]->phaseColour * (1.0f * p->volumeFraction[m]);
+        //std::cout<<"phase "<<m<<" = "<<p->volumeFraction[m]<<"\n";
+        p->colour += phaseList[m]->phaseColour * (p->volumeFraction[m]);
       }
     }
   }
@@ -623,7 +636,7 @@ vec3 SPHSystem::spiky(Particle *p, Particle *np)
   }
   else
   {
-    vec3 normal = (r/rlen) * spiky_value * pow(kernel - rlen, 2);
+    vec3 normal = normalize(r) * spiky_value * pow(kernel - rlen, 2);
 //    std::cout<<normal.m_x<<" "<<normal.m_y<<" "<<normal.m_z<<"\n";
     return normal;
   }
@@ -650,7 +663,15 @@ float SPHSystem::length(vec3 vector)
   float X = vector.m_x;
   float Y = vector.m_y;
   float Z = vector.m_z;
-  return sqrt( X * X + Y * Y + Z * Z );
+  float len = sqrt( X * X + Y * Y + Z * Z );
+  if(isnan(len) == true)
+  {
+    return 0.0f;
+  }
+  else
+  {
+    return len;
+  }
 }
 
 vec3 SPHSystem::normalize(vec3 vector)
@@ -663,6 +684,11 @@ vec3 SPHSystem::normalize(vec3 vector)
     normal.m_x = vector.m_x / vecLength;
     normal.m_y = vector.m_y / vecLength;
     normal.m_z = vector.m_z / vecLength;
+  }
+
+  else
+  {
+    normal = vec3(0.0f, 0.0f, 0.0f);
   }
 
   return normal;
@@ -690,6 +716,10 @@ void SPHSystem::driftVelocity()
       p->viscosity = 0.0f;
       float sum_mass_dens = 0;
       vec3 sum_drift_vel = vec3(0.0f, 0.0f, 0.0f);
+      for(uint l = 0; l < phaseList.size(); l++)
+      {
+        p->viscosity += p->volumeFraction[l] * phaseList[l]->phaseViscosity;
+      }
 
       for(int x=-1; x<=1; x++)
       {
@@ -711,20 +741,20 @@ void SPHSystem::driftVelocity()
 
             while(np != NULL)
             {
-              p->pressureGradientk += spiky(p, np) * np->restMass/np->interp_density * (np->pressure - p->pressure);
-              p->diffusionGradient += spiky(p, np) * np->restMass/np->interp_density * (np->volumeFraction[i] - p->volumeFraction[i]);
+              vec3 spike = spiky(p, np);
+              p->pressureGradientk += spike * np->restMass/np->interp_density * (np->pressure - p->pressure);
+              p->diffusionGradient += spike * np->restMass/np->interp_density * (np->volumeFraction[i] - p->volumeFraction[i]);
 
-              p->pressureGradientm += spiky(p, np) * np->restMass * (np->pressure + p->pressure)/(2*np->interp_density);
+              p->pressureGradientm += spike * np->restMass * (np->pressure + p->pressure)/(2*np->interp_density);
 
               sum_mass_dens += np->restMass/np->interp_density;
 
               for(uint k = 0; k<phaseList.size(); k++)
               {
-                sum_drift_vel += (np->driftVelocity[k] * p->volumeFraction[k] * (np->driftVelocity[k].dot(spiky(p, np))) + p->driftVelocity[k] * p->volumeFraction[k] * (p->driftVelocity[k].dot(spiky(p, np))) ) * p->restDensity;
-                np->viscosity += np->volumeFraction[k] * phaseList[k]->phaseViscosity;
+                sum_drift_vel += (np->driftVelocity[k] * p->volumeFraction[k] * (np->driftVelocity[k].dot(spike)) + p->driftVelocity[k] * p->volumeFraction[k] * (p->driftVelocity[k].dot(spike)) ) * p->restDensity;
               }
 
-              p->div_viscosity_tensor += (np->vel - p->vel) * (np->restMass/p->interp_density) * (p->viscosity + np->viscosity) * ((vec3(np->pos - p->pos).dot(spiky(p, np)))/pow(length(vec3(np->pos - p->pos)), 2));
+              p->div_viscosity_tensor += (np->vel - p->vel) * (np->restMass/p->interp_density) * (p->viscosity + np->viscosity) * ((vec3(np->pos - p->pos).dot(spike))/pow(length(vec3(np->pos - p->pos)), 2));
 
               np=np->next;
             }
