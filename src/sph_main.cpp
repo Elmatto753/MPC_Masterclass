@@ -205,7 +205,7 @@ void init_ratio()
 
 void render_particles()
 {
-	glPointSize(1.0f);
+	glPointSize(10.0f);
 
 
 	for(uint i=0; i<sph->num_particle; i++)
@@ -380,7 +380,7 @@ int main(int argc, char **argv)
 	init();
 	init_ratio();
 	set_shaders();
-	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
+	//glEnable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
 	glEnable(GL_POINT_SPRITE_ARB);
 	glTexEnvi(GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE);
 	glDepthMask(GL_TRUE);

@@ -48,7 +48,7 @@ SPHSystem::SPHSystem()
 	rest_density=1000.0f;
 	gas_constant=1.0f;
 	viscosity=6.5f;
-	time_step=0.006f;
+	time_step=0.003f;
 	surf_norm=6.0f;
 	surf_coe=0.1f;
 
@@ -77,8 +77,10 @@ SPHSystem::SPHSystem()
 	phase2->phaseColour = vec3(0.0f, 0.0f, 1.0f);
 	phase1->restDensity = 1000.0f;
 	phase2->restDensity = 500.0f;
-	phase1->restMass = 0.01f;
-	phase2->restMass = 0.05f;
+	phase1->restMass = 0.05f;
+	phase2->restMass = 0.01f;
+	phase1->phaseViscosity = 16.5f;
+	phase2->phaseViscosity = 13.0f;
 
 	sys_running=0;
 
@@ -269,18 +271,26 @@ void SPHSystem::build_table()
 		  //std::cerr<<p->pos.m_x<<"\n";
 		  hash=calc_cell_hash(calc_cell_pos(p->pos));
 
+
+                  if(hash == 4294967295)
+                  {
+                    hash = 0;
+                  }
+
+
                   if(cell[hash] == NULL)
                   {
-                          //p->next=NULL;
-                          cell[hash]=p;
+                    p->next=NULL;
+                    cell[hash]=p;
                   }
                   else
                   {
-                          p->next=cell[hash];
-                          cell[hash]=p;
+                    p->next=cell[hash];
+                    cell[hash]=p;
                   }
+            }
           }
-        }
+
 
 }
 
@@ -416,8 +426,6 @@ void SPHSystem::comp_force_adv()
                                           while(np != NULL)
                                           {
                                                   rel_pos= p->pos-np->pos;
-                                                  //rel_pos.m_y=p->pos.m_y-np->pos.m_y;
-                                                  //rel_pos.m_z=p->pos.m_z-np->pos.m_z;
                                                   r2=rel_pos.m_x*rel_pos.m_x+rel_pos.m_y*rel_pos.m_y+rel_pos.m_z*rel_pos.m_z;
 
                                                   if(r2 < kernel_2 && r2 > INF)
@@ -436,7 +444,7 @@ void SPHSystem::comp_force_adv()
                                                           rel_vel=np->ev-p->ev;
 
                                                           visc_kernel=visco_value*(kernel-r);
-                                                          temp_force=V * viscosity * visc_kernel;
+                                                          temp_force=V * p->viscosity * visc_kernel;
                                                           p->acc=p->acc + rel_vel*temp_force;
 
 
@@ -479,12 +487,8 @@ void SPHSystem::advection()
 
 
                   p->vel=p->vel+p->acc*time_step/-(p->interp_density)+gravity*time_step;
-  //		p->vel.m_y=p->vel.m_y+p->acc.m_y*time_step/p->restDensity+gravity.m_y*time_step;
-  //		p->vel.m_z=p->vel.m_z+p->acc.m_z*time_step/p->restDensity+gravity.m_z*time_step;
 
                   p->pos=p->pos+p->vel*time_step;
-  //		p->pos.m_y=p->pos.m_y+p->vel.m_y*time_step;
-  //		p->pos.m_z=p->pos.m_z+p->vel.m_z*time_step;
 
                   if(p->pos.m_x >= world_size.m_x-BOUNDARY)
                   {
@@ -538,7 +542,9 @@ void SPHSystem::adv_vol_frac()
 //      p->colour = vec3(0.0f, 0.0f, 0.0f);
 
       for(uint k = 0; k < phaseList.size(); k++)
-      p->volumeFraction[k] += length(p->vel) * -p->volumeFraction[k] - (length(p->driftVelocity[k]) * p->volumeFraction[k]) - length(p->vel) * p->volumeFraction[k];
+      {
+        p->volumeFraction[k] += length(p->vel) * -p->volumeFraction[k] - (length((p->driftVelocity[k]) * p->volumeFraction[k])) - length(p->vel) * p->volumeFraction[k];
+      }
     }
   }
 
@@ -547,7 +553,7 @@ void SPHSystem::adv_vol_frac()
     for(uint j = 0; j<phaseList[i]->particleList.size(); j++)
     {
       p = phaseList[i]->particleList[j];
-
+      p->colour = vec3(0.0f, 0.0f, 0.0f);
       float sum_vol_frac = 0.0f;
       for(uint k = 0; k<phaseList.size(); k++)
       {
@@ -560,25 +566,37 @@ void SPHSystem::adv_vol_frac()
         for(uint l = 0; l<phaseList.size(); l++)
         {
           p->volumeFraction[l] *= divisor;
+          p->pressure *= divisor;
 //          std::cout<<p->volumeFraction[l]<<"\n";
 
         }
       }
-      if(sum_vol_frac == 0.0f || isnan(sum_vol_frac) == true)
+      if(sum_vol_frac <= 0.0f || isnan(sum_vol_frac) == true)
       {
-        p->volumeFraction[i] = 1.0f;
+        p->volumeFraction[i] = 0.99f;
         for(uint l = 0; l< phaseList.size(); l++)
         {
           if( l != i)
           {
-            p->volumeFraction[l] = 0.0f;
+            p->volumeFraction[l] = 0.01f;
           }
         }
       }
       for(uint m = 0; m<phaseList.size(); m++)
       {
         //std::cout<<"phase "<<m<<" = "<<p->volumeFraction[m]<<"\n";
-        p->colour += phaseList[m]->phaseColour * (p->volumeFraction[m]);
+        p->colour.m_x += phaseList[m]->phaseColour.m_x * (p->volumeFraction[m]);
+        p->colour.m_y += phaseList[m]->phaseColour.m_y * (p->volumeFraction[m]);
+        p->colour.m_z += phaseList[m]->phaseColour.m_z * (p->volumeFraction[m]);
+        if(p->colour.m_x > 1.0f)
+        {
+          p->colour.m_x = 1.0f;
+        }
+        if(p->colour.m_z > 1.0f)
+        {
+          p->colour.m_z = 1.0f;
+        }
+        p->colour.m_y = 0.0f;
       }
     }
   }
