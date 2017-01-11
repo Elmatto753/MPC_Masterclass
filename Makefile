@@ -14,7 +14,7 @@ CC            = gcc
 CXX           = g++
 DEFINES       = -DQT_QML_DEBUG -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
 CFLAGS        = -pipe -g -Wall -W -D_REENTRANT -fPIC $(DEFINES)
-CXXFLAGS      = -pipe -g -std=gnu++11 -Wall -W -D_REENTRANT -fPIC $(DEFINES)
+CXXFLAGS      = -pipe -O2 -g -std=gnu++11 -Wall -W -D_REENTRANT -fPIC $(DEFINES)
 INCPATH       = -I. -Iinclude -isystem /usr/local/include -I/opt/Qt5.7.0/5.7/gcc_64/include -I/opt/Qt5.7.0/5.7/gcc_64/include/QtOpenGL -I/opt/Qt5.7.0/5.7/gcc_64/include/QtWidgets -I/opt/Qt5.7.0/5.7/gcc_64/include/QtGui -I/opt/Qt5.7.0/5.7/gcc_64/include/QtCore -Imoc -I/opt/Qt5.7.0/5.7/gcc_64/mkspecs/linux-g++
 QMAKE         = /opt/Qt5.7.0/5.7/gcc_64/bin/qmake
 DEL_FILE      = rm -f
@@ -35,7 +35,7 @@ COMPRESS      = gzip -9f
 DISTNAME      = SPHFluid1.0.0
 DISTDIR = /home/i7677716/Masterclass/SPH_CPU_3D_v1/obj/SPHFluid1.0.0
 LINK          = g++
-LFLAGS        = -Wl,-rpath,/opt/Qt5.7.0/5.7/gcc_64/lib
+LFLAGS        = -O2 -Wl,-rpath,/opt/Qt5.7.0/5.7/gcc_64/lib
 LIBS          = $(SUBLIBS) -lGLU -lGLEW -lglut -L/opt/Qt5.7.0/5.7/gcc_64/lib -lQt5OpenGL -L/usr/lib64 -lQt5Widgets -lQt5Gui -lQt5Core -lGL -lpthread 
 AR            = ar cqs
 RANLIB        = 
@@ -626,10 +626,7 @@ obj/sph_system.o: src/sph_system.cpp include/sph_system.h \
 obj/sph_timer.o: src/sph_timer.cpp include/sph_timer.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/sph_timer.o src/sph_timer.cpp
 
-obj/sph_phase.o: src/sph_phase.cpp include/sph_phase.h \
-		include/sph_system.h \
-		include/sph_type.h \
-		include/sph_particle.h
+obj/sph_phase.o: src/sph_phase.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o obj/sph_phase.o src/sph_phase.cpp
 
 obj/sph_particle.o: src/sph_particle.cpp 

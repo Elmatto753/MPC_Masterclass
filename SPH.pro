@@ -28,6 +28,8 @@ OTHER_FILES+=$$PWD/Shader/shader.fs \
 
 DESTDIR=./
 
+QMAKE_CXXFLAGS += -O2
+QMAKE_LFLAGS += -O2
 macx:LIBS+= -framework OpenGL
 
 linux: LIBS+= -lGLU -lGLEW -lglut

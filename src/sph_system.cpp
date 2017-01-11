@@ -35,7 +35,7 @@ SPHSystem::SPHSystem()
 	world_size.m_x=0.16f;
 	world_size.m_y=0.16f;
 	world_size.m_z=0.16f;
-	cell_size=0.01f;
+	cell_size=0.02f;
 	grid_size.m_x=(uint)ceil(world_size.m_x/cell_size);
 	grid_size.m_y=(uint)ceil(world_size.m_y/cell_size);
 	grid_size.m_z=(uint)ceil(world_size.m_z/cell_size);
@@ -135,25 +135,25 @@ void SPHSystem::init_system()
 	vel.m_y=0.0f;
 	vel.m_z=0.0f;
 
-	for(pos.m_x=0.0f; pos.m_x<0.64f*0.1f; pos.m_x+=(0.05f*0.1f))
+	for(pos.m_x=0.0f; pos.m_x<0.64f*0.1f; pos.m_x+=(0.05f*0.2f))
 	{
-		for(pos.m_y=0.0f; pos.m_y<0.64f*0.1f; pos.m_y+=(0.05f*0.1f))
+		for(pos.m_y=0.0f; pos.m_y<0.64f*0.1f; pos.m_y+=(0.05f*0.2f))
 		{
-			for(pos.m_z=0.0f; pos.m_z<0.64f*0.1f; pos.m_z+=(0.05f*0.1f))
+			for(pos.m_z=0.0f; pos.m_z<0.64f*0.1f; pos.m_z+=(0.05f*0.2f))
 			{
-				add_particle(phase1, pos, vel);
+				add_particle(phase1, pos+vec3(0.0f, 0.01f, 0.0f), vel);
 			}
 		}
 	}
 
-	for(pos.m_x=0.0f; pos.m_x<0.64f*0.1f; pos.m_x+=(0.05f*0.1f))
+	for(pos.m_x=0.0f; pos.m_x<0.64f*0.1f; pos.m_x+=(0.05f*0.2f))
 	{
-		for(pos.m_y=0.0f; pos.m_y<0.64f*0.1f; pos.m_y+=(0.05f*0.1f))
+		for(pos.m_y=0.0f; pos.m_y<0.64f*0.1f; pos.m_y+=(0.05f*0.2f))
 		{
-			for(pos.m_z=0.0f; pos.m_z<0.64f*0.1f; pos.m_z+=(0.05f*0.1f))
+			for(pos.m_z=0.0f; pos.m_z<0.64f*0.1f; pos.m_z+=(0.05f*0.2f))
 			{
 
-				add_particle(phase2, pos+vec3(0.08f, 0.0f, 0.0f), vel);
+				add_particle(phase2, pos+vec3(0.08f, 0.01f, 0.0f), vel);
 			}
 		}
 	}
@@ -336,7 +336,7 @@ void SPHSystem::comp_dens_pres()
 					int neighbornum = 0;
 					while(np != NULL)
 					{
-						rel_pos=p->pos-np->pos;
+						rel_pos=np->pos-p->pos;
 						r2=rel_pos.m_x*rel_pos.m_x+rel_pos.m_y*rel_pos.m_y+rel_pos.m_z*rel_pos.m_z;
 
 						if(r2<INF || r2>=kernel_2)
@@ -347,9 +347,7 @@ void SPHSystem::comp_dens_pres()
 
 						p->restDensity=p->restDensity + p->restMass * poly6(p, np);
 
-						p->restDensity=p->restDensity+self_dens;
 						p->interp_density += p->restMass * poly6(p, np);
-						p->pressure=(pow(p->interp_density / p->restDensity, 7) - 1) * ((gas_constant * p->restDensity) / 7);
 						//std::cout<<p->pressure<<"\n";
 
 						np=np->next;
@@ -359,6 +357,8 @@ void SPHSystem::comp_dens_pres()
 			}
 		}
 
+		p->restDensity=p->restDensity+self_dens;
+		p->pressure=(pow(p->interp_density / p->restDensity, 7) - 1) * ((gas_constant * p->restDensity) / 7);
 
 
 	  }
@@ -493,37 +493,37 @@ void SPHSystem::advection()
                   if(p->pos.m_x >= world_size.m_x-BOUNDARY)
                   {
                           p->vel.m_x=p->vel.m_x*wall_damping;
-                          p->pos.m_x=world_size.m_x-BOUNDARY - 0.003f;
+                          p->pos.m_x=world_size.m_x-BOUNDARY - 0.00f;
                   }
 
                   if(p->pos.m_x < 0.0f)
                   {
                           p->vel.m_x=p->vel.m_x*wall_damping;
-                          p->pos.m_x=0.003f;
+                          p->pos.m_x=0.00f;
                   }
 
                   if(p->pos.m_y >= world_size.m_y-BOUNDARY)
                   {
                           p->vel.m_y=p->vel.m_y*wall_damping;
-                          p->pos.m_y=world_size.m_y-BOUNDARY - 0.003f;
+                          p->pos.m_y=world_size.m_y-BOUNDARY - 0.00f;
                   }
 
                   if(p->pos.m_y < 0.0f)
                   {
                           p->vel.m_y=p->vel.m_y*wall_damping;
-                          p->pos.m_y=0.003f;
+                          p->pos.m_y=0.00f;
                   }
 
                   if(p->pos.m_z >= world_size.m_z-BOUNDARY)
                   {
                           p->vel.m_z=p->vel.m_z*wall_damping;
-                          p->pos.m_z=world_size.m_z-BOUNDARY - 0.003f;
+                          p->pos.m_z=world_size.m_z-BOUNDARY - 0.00f;
                   }
 
                   if(p->pos.m_z < 0.0f)
                   {
                           p->vel.m_z=p->vel.m_z*wall_damping;
-                          p->pos.m_z=0.003f;
+                          p->pos.m_z=0.00f;
                   }
 
                   p->ev=(p->ev+p->vel)/2;
@@ -727,6 +727,7 @@ void SPHSystem::driftVelocity()
     for(uint j=0; j<phaseList[i]->numParticle; j++)
     {
       p=phaseList[i]->particleList[j];
+      p->acc = vec3(0.0f, 0.0f, 0.0f);
       p->pressureGradientk = vec3(0.0f, 0.0f, 0.0f);
       p->diffusionGradient = vec3(0.0f, 0.0f, 0.0f);
       p->pressureGradientm = vec3(0.0f, 0.0f, 0.0f);
