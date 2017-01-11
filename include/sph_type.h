@@ -61,19 +61,19 @@ public:
 
 void operator+=( const vec3& _v) { m_x += _v.m_x;
                                    m_y += _v.m_y;
-                                   m_y += _v.m_z; }
+                                   m_z += _v.m_z; }
 
 void operator-=( const vec3& _v) { m_x -= _v.m_x;
                                    m_y -= _v.m_y;
-                                   m_y -= _v.m_z; }
+                                   m_z -= _v.m_z; }
 
 void operator*=( float _v) { m_x *= _v;
                              m_y *= _v;
-                             m_y *= _v; }
+                             m_z *= _v; }
 
 void operator/=( float _v) { m_x /= _v;
                              m_y /= _v;
-                             m_y /= _v; }
+                             m_z /= _v; }
 
 vec3 operator/( float _v) { return vec3(m_x / _v, m_y / _v, m_z / _v); }
 

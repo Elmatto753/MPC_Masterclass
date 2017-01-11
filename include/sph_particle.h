@@ -22,12 +22,13 @@ public:
 	float viscosity;
 	vec3 conv_mom_change;
 	vec3 div_viscosity_tensor;
-	vec3 pressureGradientk;
+	std::vector<vec3> pressureGradientk;
 	vec3 pressureGradientm;
-	vec3 diffusionGradient;
+	std::vector<vec3> diffusionGradient;
 
 	float sum_mass_density = 0.0f;
 	vec3 sum_mass_pressure = vec3(0.0f, 0.0f, 0.0f);
+	vec3 sum_mass_diffusion = vec3(0.0f, 0.0f, 0.0f);
 
 	float surf_norm;
 

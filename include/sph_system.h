@@ -94,6 +94,7 @@ private:
 	void comp_force_adv();
 	void advection();
 	void adv_vol_frac();
+	void calc_acceleration();
 
 	float interp_mix_dens();
 	float poly6(Particle *p, Particle *np);
