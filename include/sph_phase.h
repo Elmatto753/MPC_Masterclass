@@ -16,14 +16,8 @@ public:
   ~Phase(){}
 
   uint max_particle;
-//  float volumeFraction;
-  float massFraction;
   float restDensity;
   float restMass;
-  vec3 phaseVelocity;
-  float phasePressure;
-  float stressTensor;
-  vec3 driftVelocity;
   vec3 phaseColour;
   float phaseViscosity;
   float numParticle = 0;

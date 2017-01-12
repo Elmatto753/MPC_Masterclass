@@ -11,9 +11,7 @@ INCLUDEPATH+=./include \
 
 SOURCES+=$$PWD/src/sph_main.cpp \
          $$PWD/src/sph_system.cpp \
-         $$PWD/src/sph_timer.cpp \
-         $$PWD/src/sph_phase.cpp \
-         $$PWD/src/sph_particle.cpp
+         $$PWD/src/sph_timer.cpp
 
 HEADERS+=$$PWD/include/sph_data.h \
          $$PWD/include/sph_header.h \

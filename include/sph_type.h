@@ -24,13 +24,6 @@
 
 typedef unsigned int uint;
 
-//struct float3
-//{
-//	float x;
-//	float y;
-//	float z;
-//};
-
 struct int3
 {
 	int m_x;
