@@ -1,7 +1,3 @@
-SPH_CPU_3D_v1:
-
-This is the implementation of SPH fluid in 3D.
-To compile the source code, please directly copy the files to your OpenGL project in Visual Studio 2010. glew and GLSL are required.
-For question, please contact (Dongli ZHANG) dongli.zhang0129@gmail.com.
-
-I will add the comment soon...
+Prototype multiple-fluid solver for 2016-2017 MPC Masterclass
+Based on the paper "Multiple-fluid SPH Simulation Using a Mixture Model" by Ren et al. (Available at http://gamma.cs.unc.edu/SPH_MULTI_FLUIDS/TOG2014.pdf)
+Initial code from https://github.com/finallyjustice/sphfluid/tree/master/SPH_CPU_3D_v1
