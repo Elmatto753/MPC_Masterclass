@@ -20,6 +20,7 @@ public:
 	float pressure;
 	float restMass;
 	float viscosity;
+	uint phase;
 	vec3 conv_mom_change;
 	vec3 div_viscosity_tensor;
 	std::vector<vec3> pressureGradientk;
